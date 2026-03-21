@@ -1,205 +1,173 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 - error</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: #1a1a1a;
-      color: #fff;
-      overflow: hidden;
-    }
-    .container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    h1 {
-      font-size: 6rem;
-      margin-bottom: 0.5em;
-    }
-    p {
-      font-size: 1.5rem;
-      margin-bottom: 1em;
-    }
-    /* 背景で漂う図形 */
-    .shapes {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .shape {
-      position: absolute;
-      /* 枠線は疑似クラスで制御します */
-      opacity: 0.6;
-      animation: drift linear infinite;
-    }
-    
-    /* 奇数番目は青、偶数番目はオレンジ */
-    .shapes .shape:nth-child(odd) {
-      border: 3px solid #007aff;  /* 青 */
-    }
-    .shapes .shape:nth-child(even) {
-      border: 3px solid #ff9500;  /* オレンジ */
-    }
-    
-    /* 図形の種類を定義 */
-    .line {
-      width: 120px;
-      height: 2px;
-    }
-    .square {
-      width: 50px;
-      height: 50px;
-    }
-    .rectangle {
-      width: 100px;
-      height: 50px;
-    }
-    .circle {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-    .search-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background-color: #1b1b1b; 
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between; 
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-
-
-.logo a {
-  color: #a64ac9; /* 紫色の文字 */
-  font-size: 24px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.logo a:hover {
-  color: #d891ef; 
-}
-
-
-#search-form {
-  display: flex;
-  max-width: 600px;
-  width: 100%;
-}
-
-
-#search-input {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 2px 0 0 2px;
-  background-color: #333333; 
-  color: #ffffff;
-  font-size: 16px;
-  outline: none;
-}
-
-
-#search-form button {
-  padding: 10px 20px;
-  border: none;
-  background-color: #6200ea; 
-  color: #ffffff;
-  font-size: 16px;
-  border-radius: 0 2px 2px 0;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#search-form button:hover {
-  background-color: #4500b5; /* ホバー時の濃い紫 */
-}
-    
-    /* アニメーションの設定 */
-    @keyframes drift {
-      0% {
-        transform: translate(0, 0) rotate(0deg);
-      }
-      50% {
-        transform: translate(100px, 100px) rotate(180deg);
-      }
-      100% {
-        transform: translate(0, 0) rotate(360deg);
-      }
-    }
-    
-    /* 各図形に個別の位置・アニメーションの時間と遅延の設定 */
-    .shape:nth-child(1) { top: 10%; left: 15%; animation-duration: 18s; animation-delay: 0s; }
-    .shape:nth-child(2) { top: 70%; left: 20%; animation-duration: 22s; animation-delay: 2s; }
-    .shape:nth-child(3) { top: 20%; left: 80%; animation-duration: 16s; animation-delay: 1s; }
-    .shape:nth-child(4) { top: 50%; left: 50%; animation-duration: 20s; animation-delay: 1.5s; }
-    .shape:nth-child(5) { top: 80%; left: 70%; animation-duration: 24s; animation-delay: 0.5s; }
-    .shape:nth-child(6) { top: 30%; left: 40%; animation-duration: 19s; animation-delay: 1.2s; }
-    .shape:nth-child(7) { top: 60%; left: 90%; animation-duration: 17s; animation-delay: 0.8s; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Youtube‑Pro — エラー</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#050505;--bg-2:#0b0b0b;--panel:#0f1113;--accent:#ff2b2b;--accent-2:#ff4b4b;
+    --muted:#9aa0a6;--glass: rgba(255,255,255,0.03);--mono: "Roboto Mono", monospace;--radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-1) 0%, var(--bg-2) 60%);font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e9eef2}
+  a{color:inherit;text-decoration:none}
+  /* Top navigation */
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;padding:12px 20px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-bottom:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(6px);}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{display:inline-grid;place-items:center;width:56px;height:34px;border-radius:8px;background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 6px 20px rgba(255,43,43,0.12), inset 0 -6px 18px rgba(0,0,0,0.25);}
+  .logo svg{width:26px;height:18px;display:block}
+  .brand .title{font-weight:700;font-size:16px;letter-spacing:0.2px}
+  .brand .subtitle{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+  /* Search */
+  .search-wrap{flex:1;max-width:920px;display:flex;align-items:center;gap:10px}
+  form.search{display:flex;flex:1;align-items:center;gap:8px}
+  .search input[type="search"]{flex:1;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);color:#fff;font-size:14px;outline:none;box-shadow:0 4px 18px rgba(0,0,0,0.6), inset 0 -6px 12px rgba(255,255,255,0.01);}
+  .search .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:9px 12px;border-radius:10px;font-weight:700;cursor:pointer;}
+  .search .btn.primary{background:var(--accent);border-color:rgba(255,43,43,0.95);color:#fff;box-shadow:0 8px 30px rgba(255,43,43,0.12)}
+  /* Layout: full-height main so right preview can fill screen */
+  .container{max-width:1400px;margin:18px auto;padding:0 20px;display:grid;grid-template-columns:1fr 420px;gap:28px;height:calc(100vh - 84px)}
+  @media (max-width:1100px){.container{grid-template-columns:1fr 360px}}
+  @media (max-width:980px){.container{grid-template-columns:1fr;padding:0 14px;height:auto}.right{order:2}}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:var(--radius);padding:22px;border:1px solid var(--glass);position:relative;overflow:hidden;}
+  /* Left main */
+  .main-card{min-height:100%;display:flex;flex-direction:column;gap:12px}
+  .error-head{display:flex;align-items:flex-start;gap:18px}
+  .error-code{font-family:var(--mono);font-size:36px;color:var(--accent);font-weight:900;letter-spacing:0.6px;text-shadow:0 8px 30px rgba(255,43,43,0.08)}
+  .error-meta{flex:1}
+  .error-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px}
+  .error-desc{color:var(--muted);font-size:14px;max-width:78%}
+  .actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .btn-lg{padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#fff;font-weight:700;cursor:pointer}
+  .btn-lg.primary{background:var(--accent);border-color:rgba(255,43,43,0.95);box-shadow:0 10px 40px rgba(255,43,43,0.12)}
+  .btn-lg.ghost{background:transparent;color:var(--muted)}
+  /* Terminal / stream: left column uses full height */
+  .terminal{margin-top:8px;border-radius:10px;padding:14px;background:linear-gradient(180deg,#060606,#0b0b0b);border:1px solid rgba(255,255,255,0.03);height:calc(100% - 170px);overflow:hidden;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+  .term-inner{position:absolute;left:0;right:0;bottom:0;padding:18px 22px;color:#c7c7c7;font-family:var(--mono);font-size:13px;line-height:1.45;will-change:transform;transform:translateY(0)}
+  .term-line{white-space:nowrap;opacity:0.98;padding:2px 0}
+  .term-line .tag{color:var(--muted);margin-right:8px}
+  .term-line .cmd{color:#e6e6e6}
+  .term-line .ok{color:#6fe27a}
+  .term-line .err{color:var(--accent);font-weight:700}
+  .scanline{pointer-events:none;position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px);background-size:100% 3px;mix-blend-mode:overlay}
+  /* Right panel: make preview fill available height */
+  .right{display:flex;flex-direction:column;height:100%}
+  .card-title{color:#fff;font-weight:800;margin-bottom:8px}
+  .hint{color:var(--muted);font-size:13px}
+  .log-preview{margin-top:12px;background:#070707;border-radius:8px;padding:12px;font-family:var(--mono);font-size:13px;color:#cfcfcf;overflow:auto;border:1px solid rgba(255,255,255,0.02);flex:1}
+  .small{font-size:12px;color:var(--muted)}
+  /* watermark */
+  .watermark{position:absolute;right:28px;top:28px;color:var(--accent);font-weight:900;font-family:var(--mono);font-size:84px;opacity:0.04;transform:skewX(-8deg);pointer-events:none;user-select:none}
+  .pulse{position:absolute;left:18px;top:18px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(255,43,43,0.25);animation:pulse 2.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,43,43,0.25)}70%{box-shadow:0 0 0 18px rgba(255,43,43,0.02)}100%{box-shadow:0 0 0 0 rgba(255,43,43,0.00)}}
+  @media (max-width:640px){.error-code{font-size:28px}.watermark{font-size:48px;right:12px;top:12px}.logo{width:46px;height:28px}}
+  input:focus, button:focus, a:focus{outline:3px solid rgba(255,43,43,0.12);outline-offset:2px}
+</style>
 </head>
 <body>
-  <header class="search-header">
-    <div class="logo">
-      <a href="/">MIN-Tube2</a>
+  <header class="topbar" role="banner">
+    <div class="brand" aria-hidden="false">
+      <div class="logo" aria-hidden="true" title="Youtube-Pro">
+        <svg viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="24" height="16" rx="3" fill="white" opacity="0.06"/>
+          <path d="M8 4L16 8L8 12V4Z" fill="white"/>
+        </svg>
+      </div>
+      <div>
+        <div class="title">Youtube‑Pro <span style="font-weight:600;font-size:12px;color:var(--muted);margin-left:8px">Beta</span></div>
+        <div class="subtitle">動画配信の代替プレイヤー</div>
+      </div>
     </div>
-    <form id="search-form">
-      <input type="text" id="search-input" name="q" placeholder="検索..." autocomplete="off">
-      <button type="submit">検索</button>
-    </form>
+
+    <div class="search-wrap" role="search" aria-label="サイト内検索">
+      <form class="search" action="/search" method="get" onsubmit="return handleSubmit(event)">
+        <input id="q" name="q" type="search" placeholder="検索（例: 音楽, チュートリアル, ニュース）" aria-label="検索語句" autocomplete="off" />
+        <button type="submit" class="btn primary" aria-label="検索ボタン">検索</button>
+        <button type="button" class="btn" onclick="document.getElementById('q').value='';document.getElementById('q').focus();" aria-label="検索をクリア">クリア</button>
+      </form>
+    </div>
   </header>
-  <div class="container">
-    <h1>404</h1>
-    <p>Not Found,,,,<br>Want to solve this problem?<br>
-Check out github.</p>
-  </div>
-  <div class="shapes">
-    <div class="shape line"></div>
-    <div class="shape square"></div>
-    <div class="shape rectangle"></div>
-    <div class="shape circle"></div>
-    <div class="shape line"></div>
-    <div class="shape square"></div>
-    <div class="shape circle"></div>
-  </div>
+
+  <main class="container" role="main">
+    <section class="card main-card" aria-labelledby="errTitle">
+      <div class="pulse" aria-hidden="true"></div>
+      <div class="error-head">
+        <div class="error-code" aria-hidden="false">ERR_STREAM_503</div>
+        <div class="error-meta">
+          <div id="errTitle" class="error-title">ストリーミングサービスに接続できません</div>
+          <div class="error-desc">Youtube‑Pro は現在一時的に利用できません。下のログで詳細を確認するか、再試行してください。問題が続く場合はエラーレポートを保存してサポートに送信してください。</div>
+
+          <div class="actions" role="group" aria-label="操作">
+            <button class="btn-lg primary" onclick="retry()" aria-label="再試行">再試行</button>
+            <button class="btn-lg" onclick="downloadReport()" aria-label="エラーレポートを保存">エラーレポートを保存</button>
+            <button class="btn-lg ghost" onclick="togglePause()" id="pauseBtn" aria-pressed="false">一時停止</button>
+            <button class="btn-lg ghost" onclick="copyLogs()" aria-label="ログをコピー">ログをコピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal" aria-live="polite" aria-atomic="false" aria-label="システムログ">
+        <div class="term-inner" id="termInner" role="log"></div>
+        <div class="scanline" aria-hidden="true"></div>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">Youtube‑Pro エラーページ — 状況は自動的に更新されます</div>
+      <div class="watermark" aria-hidden="true">ERROR</div>
+    </section>
+
+    <aside class="card right" aria-labelledby="rightTitle">
+      <div id="rightTitle" class="card-title">診断と対処</div>
+      <div class="hint">よくある原因と簡単な対処法</div>
+
+      <ul style="margin-top:12px;color:var(--muted);line-height:1.7">
+        <li>ネットワーク接続を確認してください（Wi‑Fi / 有線）</li>
+        <li>ブラウザのキャッシュをクリアして再読み込み</li>
+        <li>プロキシや VPN を一時的に無効化</li>
+        <li>別のブラウザやプライベートウィンドウで試す</li>
+      </ul>
+
+      <div style="margin-top:14px" class="small">リアルタイムログプレビュー</div>
+      <div class="log-preview" id="logPreview" aria-hidden="false"></div>
+
+      <div style="margin-top:12px" class="small">バージョン: <strong style="color:#fff">Youtube‑Pro 0.9.3‑beta</strong></div>
+    </aside>
+  </main>
+
+
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-  const form = document.getElementById("search-form");
-  
-  form.addEventListener("submit", function(event) {
-    event.preventDefault(); // 標準の送信動作を無効化
-    const query = document.getElementById("search-input").value.trim();
-    
-    if (query) {
-      window.location.href = "/nothing/search?q=" + encodeURIComponent(query);
-    }
-  });
-});
-  </script>
+
+function handleSubmit(e){e&&e.preventDefault();var q=document.getElementById('q').value.trim();if(!q){_p(`[${_n()}] ui.search -> empty query`);return false;}_p(`[${_n()}] ui.search -> "${q}"`);window.location.href='/search?q='+encodeURIComponent(q);return false}
+
+
+(function(){
+  var a=document.getElementById.bind(document),T=a('termInner'),P=a('logPreview'),L=0,paused=false;
+  var tpls=['[{t}] net.conn.check -> OK','[{t}] stream.init -> handshake {id}','[{t}] stream.auth -> token expired','[{t}] cache.read -> miss','[{t}] dns.resolve -> {host} -> {ip}','[{t}] http.get {url} -> {code}','[{t}] ffmpeg.spawn -> pid {num}','[{t}] buffer.fill -> {percent}%','[{t}] reconnecting in {sec}s','[{t}] error: {msg}','[{t}] warn: latency spike {ms}ms','[{t}] info: adaptive bitrate -> {kbps}kbps','[{t}] debug: frame {num} dropped','[{t}] system: memory {mem}MB free','[{t}] storage: write {file} -> ok','[{t}] telemetry: ping {ms}ms'];
+  var hosts=['edge1.youtube-pro.local','cdn01.ytp-pro.net','auth.youtube-pro.jp','api.youtube-pro.com'];
+  var msgs=['connection refused','timeout','invalid token','rate limit exceeded','unexpected EOF','permission denied','broken pipe','segfault','disk full'];
+  function r(n,m){return Math.floor(Math.random()*(m-n+1))+n}
+  function _n(){var d=new Date();return d.toLocaleTimeString('ja-JP')}
+  function g(){var s=tpls[r(0,tpls.length-1)];return s.replace(/\{t\}/g,_n()).replace(/\{id\}/g,Math.random().toString(36).slice(2,9)).replace(/\{host\}/g,hosts[r(0,hosts.length-1)]).replace(/\{ip\}/g,'192.168.'+r(0,255)+'.'+r(1,254)).replace(/\{url\}/g,'/watch?v='+Math.random().toString(36).slice(2,8)).replace(/\{code\}/g,[200,200,200,200,503,502,504,403][r(0,7)]).replace(/\{num\}/g,r(1000,9999)).replace(/\{percent\}/g,r(0,100)).replace(/\{sec\}/g,r(1,12)).replace(/\{kbps\}/g,r(200,8000)).replace(/\{ms\}/g,r(10,900)).replace(/\{mem\}/g,r(120,32000)).replace(/\{file\}/g,'/var/log/ytp/'+Math.random().toString(36).slice(2,7)+'.log').replace(/\{msg\}/g,msgs[r(0,msgs.length-1)]);}
+  function _p(raw){
+    L++;var e=document.createElement('div');e.className='term-line';
+    var h=raw.replace(/(CRITICAL|ERR|error|timeout|refused|segfault|broken pipe|disk full)/ig,function(m){return '<span class="err">'+m+'</span>'}).replace(/(OK|ok|200|201|204|SUCCESS)/g,function(m){return '<span class="ok">'+m+'</span>'});
+    e.innerHTML='<span class="tag">['+String(L).padStart(5,'0')+']</span> <span class="cmd">'+h+'</span>';T.appendChild(e);
+    var p=document.createElement('div');p.textContent=raw; if(P.firstChild) P.insertBefore(p,P.firstChild); else P.appendChild(p); if(P.childElementCount>600) P.removeChild(P.lastChild);
+    var th=T.scrollHeight, ch=T.parentElement.clientHeight,ov=Math.max(0,th-ch+24); T.style.transform='translateY(-'+ov+'px)';
+    if(T.childElementCount>4000) T.removeChild(T.firstChild);
+  }
+  function seed(n){for(var i=0;i<n;i++)_p(g())}
+  function retry(){_p('['+_n()+'] user action: retry requested');_p('['+_n()+'] net.conn.check -> OK');_p('['+_n()+'] stream.init -> handshake '+Math.random().toString(36).slice(2,9)); if(Math.random()<0.18){_p('['+_n()+'] http.get /watch?v=success -> 200');_p('['+_n()+'] status: stream resumed'); var ok=document.createElement('div'); ok.className='term-line'; ok.innerHTML='<span class="tag">['+String(++L).padStart(5,'0')+']</span> <span class="cmd"><span class=\"ok\">SUCCESS</span> ストリーミングが再開されました</span>'; T.appendChild(ok);} else {_p('['+_n()+'] reconnecting in 3s');}}
+  function dl(){var lines=Array.prototype.slice.call(T.children,-400).map(function(n){return n.textContent.trim()}).join('\n');var b=new Blob(['Youtube-Pro Error Report\nGenerated: '+new Date().toLocaleString()+'\n\nRecent logs:\n'+lines],{type:'text/plain'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='ytp-error-report.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);_p('['+_n()+'] user action: downloaded error report');}
+  function copyL(){var lines=Array.prototype.slice.call(T.children,-200).map(function(n){return n.textContent.trim()}).join('\n');navigator.clipboard&&navigator.clipboard.writeText(lines).then(function(){_p('['+_n()+'] user action: copied recent logs to clipboard')}).catch(function(){_p('['+_n()+'] warn: clipboard copy failed')});}
+  window.retry=retry; window.downloadReport=dl; window.copyLogs=copyL; window.togglePause=function(){paused=!paused;var b=document.getElementById('pauseBtn');b.textContent=paused?'再開':'一時停止';b.setAttribute('aria-pressed',String(paused));}
+  var gen=null;
+  function start(){ if(gen) return; gen=setInterval(function(){ if(paused) return; var burst=r(1,6); for(var i=0;i<burst;i++) _p(g()); if(Math.random()<0.06){ _p('['+_n()+'] CRITICAL: service outage detected -> cluster '+Math.random().toString(36).slice(2,6)+' down'); for(var j=0;j<3;j++) _p('['+_n()+'] error: '+msgs[r(0,msgs.length-1)]);} }, 360); }
+
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ for(var k=0;k<80;k++) _p(g()); } else { seed(40); start(); }
+
+  window._p=_p; window._n=_n;
+})();
+</script>
 </body>
 </html>

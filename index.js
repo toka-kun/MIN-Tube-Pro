@@ -297,8 +297,6 @@ app.get("/video/:id", async (req, res, next) => {
 <title>${videoData.videoTitle || "Youtube-Pro"}</title>
 
 <style>
-
-/* ===== 基本 ===== */
 body{
   margin:0;
   font-family: "Roboto","Noto Sans JP",Arial,sans-serif;
@@ -306,7 +304,7 @@ body{
   color:#fff;
 }
 
-/* ===== ヘッダー ===== */
+/* ヘッダー */
 .header{
   position:fixed;
   top:0;
@@ -318,12 +316,6 @@ body{
   padding:0 16px;
   border-bottom:1px solid #222;
   z-index:999;
-}
-
-.menu{
-  font-size:20px;
-  margin-right:16px;
-  cursor:pointer;
 }
 
 .logo{
@@ -355,42 +347,21 @@ body{
   cursor:pointer;
 }
 
-/* ===== レイアウト ===== */
+/* レイアウト */
 .layout{
-  display:flex;
   margin-top:56px;
-}
-
-/* ===== サイドバー ===== */
-.sidebar{
-  width:220px;
-  background:#0f0f0f;
-  padding:10px;
-  border-right:1px solid #222;
-}
-
-.side-link{
   display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px;
-  cursor:pointer;
-  border-radius:8px;
+  justify-content:center;
 }
 
-.side-link:hover{
-  background:#272727;
-}
-
-/* ===== メイン ===== */
 .main{
-  flex:1;
-  padding:20px;
+  width:1200px;
   display:flex;
   gap:20px;
+  padding:20px;
 }
 
-/* ===== 動画 ===== */
+/* 動画 */
 .video-wrap{
   flex:3;
 }
@@ -402,13 +373,13 @@ body{
   background:black;
 }
 
-/* ===== タイトル ===== */
+/* タイトル */
 .title{
   font-size:18px;
   margin:12px 0;
 }
 
-/* ===== チャンネル ===== */
+/* チャンネル */
 .channel{
   display:flex;
   justify-content:space-between;
@@ -435,7 +406,7 @@ body{
   border-radius:20px;
 }
 
-/* ===== アクション ===== */
+/* アクション */
 .actions{
   display:flex;
   gap:10px;
@@ -449,7 +420,7 @@ body{
   cursor:pointer;
 }
 
-/* ===== 説明 ===== */
+/* 説明 */
 .desc{
   background:#1f1f1f;
   padding:12px;
@@ -457,7 +428,7 @@ body{
   font-size:14px;
 }
 
-/* ===== コメント ===== */
+/* コメント */
 .comments{
   margin-top:20px;
 }
@@ -473,7 +444,7 @@ body{
   border-radius:50%;
 }
 
-/* ===== サイド動画 ===== */
+/* 右側おすすめ */
 .recommend{
   flex:1.5;
 }
@@ -498,19 +469,16 @@ body{
   color:#aaa;
 }
 
-/* ===== レスポンシブ ===== */
+/* レスポンシブ */
 @media(max-width:1000px){
-  .sidebar{display:none;}
   .main{flex-direction:column;}
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div class="menu">☰</div>
   <div class="logo">Youtube-Pro</div>
 
   <form class="search" id="searchForm">
@@ -521,14 +489,6 @@ body{
 
 <div class="layout">
 
-<!-- サイドバー -->
-<div class="sidebar">
-  <div class="side-link">🏠 ホーム</div>
-  <div class="side-link">🔥 急上昇</div>
-  <div class="side-link">📺 登録チャンネル</div>
-</div>
-
-<!-- メイン -->
 <div class="main">
 
 <div class="video-wrap">
@@ -567,7 +527,7 @@ body{
 
 </div>
 
-<!-- 右 -->
+<!-- 右おすすめ -->
 <div class="recommend" id="rec"></div>
 
 </div>
@@ -578,15 +538,15 @@ body{
 const stream = \`${streamEmbedHTML.replace(/`/g,"\\`")}\`;
 const yt = \`${youtubeEmbedHTML.replace(/`/g,"\\`")}\`;
 
-document.getElementById("player").innerHTML = stream;
+player.innerHTML = stream;
 
 /* 検索 */
-document.getElementById("searchForm").onsubmit=e=>{
+searchForm.onsubmit=e=>{
   e.preventDefault();
   location.href="/nothing/search?q="+encodeURIComponent(q.value);
 };
 
-/* サイド動画 */
+/* おすすめ */
 fetch('/api/playlist?channelName=${videoData.channelName}')
 .then(r=>r.json())
 .then(d=>{
@@ -605,7 +565,7 @@ fetch('/api/playlist?channelName=${videoData.channelName}')
   rec.innerHTML=html;
 });
 
-/* ダブルクリックで切替 */
+/* 切替 */
 player.ondblclick=()=>{
   player.innerHTML=yt;
 };

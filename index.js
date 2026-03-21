@@ -76,19 +76,32 @@ app.get("/", (req, res) => {
 app.get("/api/trending", async (req, res) => {
   const page = parseInt(req.query.page) || 0;
   try {
+    // 1. 多様なジャンルのシードキーワード
     const baseTopics = [
-      "Official Music Video", "ライブ 配信 ニュース", 
-      "ゲーム 実況", "THE FIRST TAKE", "Vlog", 
-      "歌ってみた", "切り抜き", "ハイライト", 
-      "料理 レシピ", "エンタメ", "アニメ 最新話"
+      "Official Music Video", 
+      "ライブ 配信 ニュース", 
+      "ゲーム 実況 人気", 
+      "THE FIRST TAKE", 
+      "Vlog 日常", 
+      "歌ってみた 人気", 
+      "切り抜き 面白い", 
+      "ハイライト スポーツ", 
+      "料理 レシピ 簡単", 
+      "エンタメ バラエティ", 
+      "アニメ 最新話"
     ];
 
-    const seed1 = baseTopics[(page * 2) % baseTopics.length];
-    const seed2 = baseTopics[(page * 2 + 1) % baseTopics.length];
+    // 2. キーワード自体をランダムにシャッフル
+    const shuffledTopics = shuffleArray([...baseTopics]);
+    
+    // シャッフルされたキーワードから今回のリクエスト用の2つを選択
+    const seed1 = shuffledTopics[0];
+    const seed2 = shuffledTopics[1];
 
+    // 3. 複数のキーワードで並列取得
     const [res1, res2] = await Promise.all([
-      yts.GetListByKeyword(seed1, false, 30),
-      yts.GetListByKeyword(seed2, false, 30)
+      yts.GetListByKeyword(seed1, false, 35),
+      yts.GetListByKeyword(seed2, false, 35)
     ]);
 
     let combined = [...(res1.items || []), ...(res2.items || [])];
@@ -98,7 +111,7 @@ app.get("/api/trending", async (req, res) => {
       if (item.type !== 'video') continue;
 
       const titleLower = item.title.toLowerCase();
-      // 絶対にショート動画を読み込まない厳密なフィルター
+      // ★絶対ショート動画を読み込まないフィルター
       if (titleLower.includes('shorts') || titleLower.includes('#shorts') || titleLower.includes('ショート')) continue;
       
       const thumbUrl = item.thumbnail?.thumbnails?.[0]?.url || "";
@@ -110,12 +123,9 @@ app.get("/api/trending", async (req, res) => {
       }
     }
 
-    // 上位の結果を普通に読み込む
+    // 4. 全体を完全にランダムにシャッフルして表示順をバラバラにする
     let finalItems = Array.from(uniqueItemsMap.values());
-    finalItems = finalItems.slice(0, 20);
-
-    // いつも同じ並びにならないよう、上位陣の中で少しだけシャッフル
-    finalItems.sort(() => 0.5 - Math.random());
+    finalItems = shuffleArray(finalItems).slice(0, 24);
 
     res.json({ items: finalItems });
     

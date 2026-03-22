@@ -361,23 +361,25 @@ app.get("/video/:id", async (req, res, next) => {
         .comment-avatar { width: 40px; height: 40px; border-radius: 50%; }
         .comment-author { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; }
 
-        /* Shorts Shelf Design */
-        .shorts-shelf-container { margin-bottom: 24px; border-bottom: 4px solid var(--bg-secondary); padding-bottom: 16px; }
-        .shorts-shelf-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
-        .shorts-shelf-title img { width: 24px; height: 24px; }
-        .shorts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .short-card { text-decoration: none; color: inherit; display: block; }
-        .short-thumb { aspect-ratio: 9/16; border-radius: 8px; overflow: hidden; background: #222; }
-        .short-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .short-info { margin-top: 6px; }
-        .short-title { font-size: 14px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .short-views { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-
+        /* 通常のおすすめ動画デザイン */
         .rec-item { display: flex; gap: 8px; margin-bottom: 12px; cursor: pointer; text-decoration: none; color: inherit; }
         .rec-thumb { width: 160px; height: 90px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #222; }
         .rec-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .rec-title { font-size: 14px; font-weight: bold; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .rec-meta { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+        .rec-info { display: flex; flex-direction: column; justify-content: flex-start; }
+        .rec-title { font-size: 14px; font-weight: bold; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+        .rec-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+        /* Shorts Shelf デザイン (下部に配置するための調整) */
+        .shorts-shelf-container { margin-top: 24px; border-top: 4px solid var(--bg-secondary); padding-top: 20px; margin-bottom: 24px; }
+        .shorts-shelf-title { display: flex; align-items: center; font-size: 18px; font-weight: bold; margin-bottom: 16px; color: white; }
+        .shorts-shelf-title svg { margin-right: 8px; width: 24px; height: 24px; }
+        .shorts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .short-card { text-decoration: none; color: inherit; display: block; }
+        .short-thumb { aspect-ratio: 9/16; border-radius: 8px; overflow: hidden; background: #222; }
+        .short-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .short-info { margin-top: 8px; }
+        .short-title { font-size: 14px; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .short-views { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
 
         @media (max-width: 1000px) { .container { flex-direction: column; padding: 0; } .sidebar { width: 100%; padding: 16px; box-sizing: border-box; } .player-container { border-radius: 0; } .main-content { padding: 16px; } }
     </style>
@@ -404,14 +406,18 @@ app.get("/video/:id", async (req, res, next) => {
         </div>
     </div>
     <div class="sidebar">
+        <div id="recommendations"></div>
+
         <div id="shortsShelf" class="shorts-shelf-container" style="display:none;">
             <div class="shorts-shelf-title">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Youtube_shorts_icon.svg">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red">
+                    <path d="M17.77,10.32l-1.2-.5L18,9.06a3.74,3.74,0,0,0-3.5-6.62L6,6.94a3.74,3.74,0,0,0,.23,6.74l1.2.49L6,14.93a3.75,3.75,0,0,0,3.5,6.63l8.5-4.5a3.74,3.74,0,0,0-.23-6.74Z"/>
+                    <polygon points="10 14.65 15 12 10 9.35 10 14.65" fill="#fff"/>
+                </svg>
                 Shorts
             </div>
             <div id="shortsGrid" class="shorts-grid"></div>
         </div>
-        <div id="recommendations"></div>
     </div>
 </div>
 
@@ -424,7 +430,19 @@ app.get("/video/:id", async (req, res, next) => {
         const shorts = data.items.filter(item => item.title.includes('#'));
         const regulars = data.items.filter(item => !item.title.includes('#'));
 
-        // Render Shorts Grid
+        // 上部に通常のおすすめリストを描画
+        document.getElementById('recommendations').innerHTML = regulars.map(item => \`
+            <a href="/video/\${item.id}" class="rec-item">
+                <div class="rec-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/mqdefault.jpg"></div>
+                <div class="rec-info">
+                    <div class="rec-title">\${item.title}</div>
+                    <div class="rec-meta">\${item.channelTitle}</div>
+                    <div class="rec-meta">\${item.viewCountText || ''}</div>
+                </div>
+            </a>
+        \`).join('');
+
+        // 下部にShorts専用グリッドを描画
         if (shorts.length > 0) {
             const shelf = document.getElementById('shortsShelf');
             const grid = document.getElementById('shortsGrid');
@@ -439,18 +457,6 @@ app.get("/video/:id", async (req, res, next) => {
                 </a>
             \`).join('');
         }
-
-        // Render Regular List
-        document.getElementById('recommendations').innerHTML = regulars.map(item => \`
-            <a href="/video/\${item.id}" class="rec-item">
-                <div class="rec-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/mqdefault.jpg"></div>
-                <div class="rec-info">
-                    <div class="rec-title">\${item.title}</div>
-                    <div class="rec-meta">\${item.channelTitle}</div>
-                    <div class="rec-meta">\${item.viewCountText || ''}</div>
-                </div>
-            </a>
-        \`).join('');
     }
     window.onload = loadRecommendations;
 </script>

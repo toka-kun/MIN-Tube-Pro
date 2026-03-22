@@ -76,19 +76,15 @@ app.get("/", (req, res) => {
 app.get("/api/trending", async (req, res) => {
   const page = parseInt(req.query.page) || 0;
   try {
-    // 1. 本物のトレンドを抽出するためのシードキーワード群
-    // 単なる「急上昇」という言葉ではなく、YouTubeで常にトラフィックが高い「動詞」や「属性」を組み合わせる
     const trendingSeeds = [
       "人気急上昇", "最新 ニュース", "Music Video Official", 
       "ゲーム実況 人気", "話題の動画", "トレンド", 
       "Breaking News Japan", "Top Hits", "いま話題"
     ];
 
-    // ページ数に応じてシードを切り替え、常に新鮮なデータを確保
     const seed1 = trendingSeeds[(page * 2) % trendingSeeds.length];
     const seed2 = trendingSeeds[(page * 2 + 1) % trendingSeeds.length];
 
-    // 2. 複数の角度から検索を並列実行
     const [res1, res2] = await Promise.all([
       yts.GetListByKeyword(seed1, false, 25),
       yts.GetListByKeyword(seed2, false, 25)
@@ -99,13 +95,7 @@ app.get("/api/trending", async (req, res) => {
     const seenIdsServer = new Set();
 
     for (const item of combined) {
-      // 厳格なフィルタリング
-      // (1) 動画のみ (2) Shorts除外 → 削除 (3) 重複除外 (4) チャンネルやプレイリストを除外
-      if (item.type === 'video' && 
-          !seenIdsServer.has(item.id)) {
-        
-        // 人気動画らしい「指標（視聴回数テキスト）」があるかチェック（任意）
-        // 視聴回数が入っていないものは「急上昇」とは言えないため
+      if (item.type === 'video' && !seenIdsServer.has(item.id)) {
         if (item.viewCountText) {
           seenIdsServer.add(item.id);
           finalItems.push(item);
@@ -113,7 +103,6 @@ app.get("/api/trending", async (req, res) => {
       }
     }
 
-    // 3. 多様性を出すための加重シャッフル
     const result = finalItems.sort(() => 0.5 - Math.random());
     res.json({ items: result });
     
@@ -134,21 +123,18 @@ app.get("/api/search", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ★★★ 究極のパーフェクト・アルゴリズム (No Shorts, No Channels) ★★★
+// ★★★ パーフェクト・アルゴリズム (Shorts許可版) ★★★
 app.get("/api/recommendations", async (req, res) => {
   const { title, channel, id } = req.query;
   try {
-    // 1. タイトルのクレンジング（検索精度向上）
     const cleanKwd = title
       .replace(/[【】「」()!！?？\[\]]/g, ' ')
-      .replace(/#shorts|shorts|ショート/gi, '') // 検索ワードからShortsを排除
       .replace(/\s+/g, ' ')
       .trim();
 
     const words = cleanKwd.split(' ').filter(w => w.length >= 2);
     const mainTopic = words.length > 0 ? words.slice(0, 2).join(' ') : cleanKwd;
 
-    // 2. 複数のソースから候補を収集
     const [topicRes, channelRes, relatedRes] = await Promise.all([
       yts.GetListByKeyword(`${mainTopic}`, false, 12),
       yts.GetListByKeyword(`${channel}`, false, 8),
@@ -161,44 +147,30 @@ app.get("/api/recommendations", async (req, res) => {
       ...(relatedRes.items || [])
     ];
 
-    // 3. 厳格なフィルタリング・フェーズ
     const seenIds = new Set([id]); 
     const seenNormalizedTitles = new Set();
     const finalItems = [];
 
     for (const item of rawList) {
-      // (1) アカウント（Channel）やプレイリストを除外、動画のみを許可
       if (!item.id || item.type !== 'video') continue;
-      
-      // (2) すでにリストにある、または現在の動画ならスキップ
       if (seenIds.has(item.id)) continue;
 
-      // (3) Shortsの徹底排除ロジック
-      const isShortsTitle = /#shorts|shorts|ショート/gi.test(item.title);
-      // 一部のAPIではthumbnailのURLにshortsが含まれる、または特定のフラグがある
-      const isShortsThumb = item.thumbnail?.thumbnails?.[0]?.url?.includes('shorts');
-      if (isShortsTitle || isShortsThumb) continue;
-
-      // (4) タイトルの正規化による「重複内容」の排除
+      // タイトルの正規化による「重複内容」の排除
       const normalized = item.title.toLowerCase()
         .replace(/\s+/g, '')
-        .replace(/official|lyrics|mv|musicvideo|video|公式|実況|解説|ショート|#shorts/g, '');
+        .replace(/official|lyrics|mv|musicvideo|video|公式|実況|解説/g, '');
 
-      // 内容が似すぎている動画（例：同じ曲の別アップロードなど）を排除
       const titleSig = normalized.substring(0, 12);
       if (seenNormalizedTitles.has(titleSig)) continue;
 
-      // 合格した動画をリストに追加
       seenIds.add(item.id);
       seenNormalizedTitles.add(titleSig);
       finalItems.push(item);
 
-      if (finalItems.length >= 18) break; 
+      if (finalItems.length >= 24) break; 
     }
 
-    // 4. シャッフルして自然なおすすめ感を演出
     const result = finalItems.sort(() => 0.5 - Math.random());
-    
     res.json({ items: result });
   } catch (err) {
     console.error("Rec Engine Error:", err);
@@ -244,7 +216,7 @@ app.get("/video/:id", async (req, res, next) => {
     const isShortForm = videoData.videoTitle.includes('#');
 
     if (isShortForm) {
-      // --- SHORTS MODE HTML (PERFECTED DESIGN) ---
+      // --- SHORTS MODE HTML ---
       const shortsHtml = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -255,137 +227,47 @@ app.get("/video/:id", async (req, res, next) => {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: "Roboto", sans-serif; overflow: hidden; }
-        
-        .shorts-wrapper {
-            position: relative; width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
-            background: #000;
-        }
-
-        .video-container {
-            position: relative;
-            height: 94vh; /* 画面に収まるよう少し小さく */
-            aspect-ratio: 9/16;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        @media (max-width: 600px) {
-            .video-container { height: 100%; width: 100%; border-radius: 0; }
-        }
-
-        video, iframe {
-            width: 100%; height: 100%;
-            object-fit: cover; border: none;
-        }
-
-        /* 進行状況バー */
-        .progress-container {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-            background: rgba(255,255,255,0.2); z-index: 12;
-        }
+        .shorts-wrapper { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; }
+        .video-container { position: relative; height: 94vh; aspect-ratio: 9/16; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 600px) { .video-container { height: 100%; width: 100%; border-radius: 0; } }
+        video, iframe { width: 100%; height: 100%; object-fit: cover; border: none; }
+        .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.2); z-index: 12; }
         .progress-bar { height: 100%; background: #ff0000; width: 0%; transition: width 0.1s linear; }
-
-        .bottom-overlay {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 100px 16px 24px;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            z-index: 5; pointer-events: none;
-        }
+        .bottom-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 100px 16px 24px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); z-index: 5; pointer-events: none; }
         .bottom-overlay * { pointer-events: auto; }
-
         .channel-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .channel-info img { width: 32px; height: 32px; border-radius: 50%; }
         .channel-name { font-weight: 500; font-size: 15px; }
-        .subscribe-btn {
-            background: #fff; color: #000; border: none; padding: 6px 12px;
-            border-radius: 18px; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 8px;
-        }
-
-        .video-title {
-            font-size: 14px; line-height: 1.4; margin-bottom: 8px; font-weight: 400;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-        }
-
-        .side-bar {
-            position: absolute; right: 8px; bottom: 80px;
-            display: flex; flex-direction: column; gap: 16px; align-items: center;
-            z-index: 10;
-        }
+        .subscribe-btn { background: #fff; color: #000; border: none; padding: 6px 12px; border-radius: 18px; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 8px; }
+        .video-title { font-size: 14px; line-height: 1.4; margin-bottom: 8px; font-weight: 400; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .side-bar { position: absolute; right: 8px; bottom: 80px; display: flex; flex-direction: column; gap: 16px; align-items: center; z-index: 10; }
         .action-btn { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .btn-icon {
-            width: 44px; height: 44px; background: rgba(255,255,255,0.12);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; transition: 0.2s; margin-bottom: 4px;
-        }
+        .btn-icon { width: 44px; height: 44px; background: rgba(255,255,255,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; margin-bottom: 4px; }
         .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.25); }
         .action-btn span { font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-weight: 400; }
-
-        /* スワイプヒント */
-        .swipe-hint {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 30px;
-            display: flex; align-items: center; gap: 10px; z-index: 50;
-            opacity: 0; pointer-events: none; transition: opacity 0.5s;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        .swipe-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; border: 1px solid rgba(255,255,255,0.2); }
         .swipe-hint.show { opacity: 1; animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, -60%); } }
-
-        .comments-panel {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 70%;
-            background: #181818; border-radius: 16px 16px 0 0;
-            z-index: 20; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column;
-        }
+        .comments-panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 70%; background: #181818; border-radius: 16px 16px 0 0; z-index: 20; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .comments-panel.open { transform: translateY(0); }
-        .comments-header {
-            padding: 16px; border-bottom: 1px solid #333;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .comments-header { padding: 16px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .comments-body { flex: 1; overflow-y: auto; padding: 16px; }
         .comment-item { display: flex; gap: 12px; margin-bottom: 18px; }
         .comment-avatar { width: 32px; height: 32px; border-radius: 50%; }
-
-        .top-nav {
-            position: absolute; top: 16px; left: 16px; z-index: 15;
-            display: flex; align-items: center; color: white; text-decoration: none;
-        }
+        .top-nav { position: absolute; top: 16px; left: 16px; z-index: 15; display: flex; align-items: center; color: white; text-decoration: none; }
         .top-nav i { font-size: 20px; filter: drop-shadow(0 0 4px rgba(0,0,0,0.5)); }
-
-        .loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 100; display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: 0.3s;
-        }
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .loading-screen.active { opacity: 1; }
     </style>
 </head>
 <body>
-
     <div id="loader" class="loading-screen"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>
-
     <div class="shorts-wrapper">
         <div class="video-container">
             <a href="/" class="top-nav"><i class="fas fa-arrow-left"></i></a>
-
-            <div id="swipeHint" class="swipe-hint">
-                <i class="fas fa-hand-pointer"></i>
-                <span>下にスワイプして次の動画へ移動</span>
-            </div>
-
-            ${videoData.stream_url !== "youtube-nocookie" 
-                ? `<video id="videoPlayer" src="${videoData.stream_url}" autoplay loop playsinline></video>` 
-                : `<iframe id="videoIframe" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0" allow="autoplay"></iframe>`
-            }
-
+            <div id="swipeHint" class="swipe-hint"><i class="fas fa-hand-pointer"></i><span>下にスワイプして次の動画へ移動</span></div>
+            ${videoData.stream_url !== "youtube-nocookie" ? `<video id="videoPlayer" src="${videoData.stream_url}" autoplay loop playsinline></video>` : `<iframe id="videoIframe" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0" allow="autoplay"></iframe>`}
             <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
-
             <div class="side-bar">
                 <div class="action-btn"><div class="btn-icon"><i class="fas fa-thumbs-up"></i></div><span>${videoData.likeCount || '評価'}</span></div>
                 <div class="action-btn"><div class="btn-icon"><i class="fas fa-thumbs-down"></i></div><span>低評価</span></div>
@@ -393,36 +275,18 @@ app.get("/video/:id", async (req, res, next) => {
                 <div class="action-btn"><div class="btn-icon"><i class="fas fa-share"></i></div><span>共有</span></div>
                 <div class="action-btn"><div class="btn-icon" style="background:none;"><img src="${videoData.channelImage}" style="width:30px; height:30px; border-radius:4px; border:2px solid #fff;"></div></div>
             </div>
-
             <div class="bottom-overlay">
-                <div class="channel-info">
-                    <img src="${videoData.channelImage || 'https://via.placeholder.com/40'}">
-                    <span class="channel-name">@${videoData.channelName}</span>
-                    <button class="subscribe-btn">登録</button>
-                </div>
+                <div class="channel-info"><img src="${videoData.channelImage || 'https://via.placeholder.com/40'}"><span class="channel-name">@${videoData.channelName}</span><button class="subscribe-btn">登録</button></div>
                 <div class="video-title">${videoData.videoTitle}</div>
             </div>
-
             <div id="commentsPanel" class="comments-panel">
-                <div class="comments-header">
-                    <h3 style="margin:0; font-size:16px;">コメント</h3>
-                    <i class="fas fa-times" style="cursor:pointer;" onclick="toggleComments()"></i>
-                </div>
+                <div class="comments-header"><h3 style="margin:0; font-size:16px;">コメント</h3><i class="fas fa-times" style="cursor:pointer;" onclick="toggleComments()"></i></div>
                 <div class="comments-body">
-                    ${commentsData.comments.length > 0 ? commentsData.comments.map(c => `
-                        <div class="comment-item">
-                            <img class="comment-avatar" src="${c.authorThumbnails?.[0]?.url || 'https://via.placeholder.com/32'}">
-                            <div>
-                                <div style="font-size:12px; color:#aaa; font-weight:bold;">${c.author}</div>
-                                <div style="font-size:14px; margin-top:2px;">${c.content}</div>
-                            </div>
-                        </div>
-                    `).join('') : '<p style="text-align:center; color:#888;">コメントはありません</p>'}
+                    ${commentsData.comments.length > 0 ? commentsData.comments.map(c => `<div class="comment-item"><img class="comment-avatar" src="${c.authorThumbnails?.[0]?.url || 'https://via.placeholder.com/32'}"><div><div style="font-size:12px; color:#aaa; font-weight:bold;">${c.author}</div><div style="font-size:14px; margin-top:2px;">${c.content}</div></div></div>`).join('') : '<p style="text-align:center; color:#888;">コメントはありません</p>'}
                 </div>
             </div>
         </div>
     </div>
-
     <script>
         let startY = 0;
         const loader = document.getElementById('loader');
@@ -430,67 +294,31 @@ app.get("/video/:id", async (req, res, next) => {
         const swipeHint = document.getElementById('swipeHint');
         const video = document.getElementById('videoPlayer');
         const progressBar = document.getElementById('progressBar');
-
-        // 初回ヒント表示
-        window.onload = () => {
-            swipeHint.classList.add('show');
-            setTimeout(() => { swipeHint.classList.remove('show'); }, 1000);
-        };
-
-        // プログレスバーの更新
-        if (video) {
-            video.ontimeupdate = () => {
-                const percent = (video.currentTime / video.duration) * 100;
-                progressBar.style.width = percent + '%';
-            };
-        }
-
-        function toggleComments() {
-            commentsPanel.classList.toggle('open');
-        }
-
+        window.onload = () => { swipeHint.classList.add('show'); setTimeout(() => { swipeHint.classList.remove('show'); }, 1000); };
+        if (video) { video.ontimeupdate = () => { const percent = (video.currentTime / video.duration) * 100; progressBar.style.width = percent + '%'; }; }
+        function toggleComments() { commentsPanel.classList.toggle('open'); }
         async function loadNextShort() {
             if (commentsPanel.classList.contains('open')) return;
             loader.classList.add('active');
             try {
-                const params = new URLSearchParams({
-                    title: "${videoData.videoTitle}",
-                    channel: "${videoData.channelName}",
-                    id: "${videoId}"
-                });
+                const params = new URLSearchParams({ title: "${videoData.videoTitle}", channel: "${videoData.channelName}", id: "${videoId}" });
                 const res = await fetch(\`/api/recommendations?\${params.toString()}\`);
                 const data = await res.json();
                 const nextShort = data.items.find(item => item.title.includes('#')) || data.items[0];
-                if (nextShort) {
-                    window.location.href = '/video/' + nextShort.id;
-                } else {
-                    window.location.href = '/';
-                }
+                if (nextShort) { window.location.href = '/video/' + nextShort.id; } else { window.location.href = '/'; }
             } catch (e) { window.location.href = '/'; }
         }
-
-        // スワイプ検知
         window.addEventListener('touchstart', e => startY = e.touches[0].pageY);
-        window.addEventListener('touchend', e => {
-            const endY = e.changedTouches[0].pageY;
-            if (startY - endY > 100) loadNextShort(); // 下から上にスワイプ
-        });
-        window.addEventListener('wheel', e => {
-            if (e.deltaY > 50) loadNextShort();
-        }, { passive: true });
-
-        document.addEventListener('click', (e) => {
-            if (commentsPanel.classList.contains('open') && !commentsPanel.contains(e.target) && !e.target.closest('.action-btn')) {
-                toggleComments();
-            }
-        });
+        window.addEventListener('touchend', e => { const endY = e.changedTouches[0].pageY; if (startY - endY > 100) loadNextShort(); });
+        window.addEventListener('wheel', e => { if (e.deltaY > 50) loadNextShort(); }, { passive: true });
+        document.addEventListener('click', (e) => { if (commentsPanel.classList.contains('open') && !commentsPanel.contains(e.target) && !e.target.closest('.action-btn')) { toggleComments(); } });
     </script>
 </body>
 </html>`;
       return res.send(shortsHtml);
     }
 
-    // --- STANDARD VIDEO MODE HTML (NO CHANGES) ---
+    // --- STANDARD VIDEO MODE HTML ---
     const streamEmbed = videoData.stream_url !== "youtube-nocookie"
       ? `<video controls autoplay poster="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg">
            <source src="${videoData.stream_url}" type="video/mp4">
@@ -506,87 +334,44 @@ app.get("/video/:id", async (req, res, next) => {
     <title>${videoData.videoTitle} - YouTube Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg-main: #0f0f0f;
-            --bg-secondary: #272727;
-            --bg-hover: #3f3f3f;
-            --text-main: #f1f1f1;
-            --text-sub: #aaaaaa;
-            --yt-red: #ff0000;
-        }
-        body {
-            margin: 0; padding: 0;
-            background: var(--bg-main);
-            color: var(--text-main);
-            font-family: "Roboto", "Arial", sans-serif;
-            overflow-x: hidden;
-        }
-
-        .navbar {
-            position: fixed; top: 0; width: 100%; height: 56px;
-            background: var(--bg-main);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; box-sizing: border-box; z-index: 1000;
-            border-bottom: 1px solid #222;
-        }
+        :root { --bg-main: #0f0f0f; --bg-secondary: #272727; --bg-hover: #3f3f3f; --text-main: #f1f1f1; --text-sub: #aaaaaa; --yt-red: #ff0000; }
+        body { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-main); font-family: "Roboto", "Arial", sans-serif; overflow-x: hidden; }
+        .navbar { position: fixed; top: 0; width: 100%; height: 56px; background: var(--bg-main); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; box-sizing: border-box; z-index: 1000; border-bottom: 1px solid #222; }
         .nav-left { display: flex; align-items: center; gap: 16px; }
         .logo { display: flex; align-items: center; color: white; text-decoration: none; font-weight: bold; font-size: 18px; }
         .logo i { color: var(--yt-red); font-size: 24px; margin-right: 4px; }
-        
         .nav-center { flex: 0 1 600px; display: flex; }
-        .search-bar {
-            display: flex; width: 100%;
-            background: #121212; border: 1px solid #303030; border-radius: 40px 0 0 40px;
-            padding: 0 16px;
-        }
-        .search-bar input {
-            width: 100%; background: transparent; border: none; color: white;
-            height: 38px; font-size: 16px; outline: none;
-        }
-        .search-btn {
-            background: #222; border: 1px solid #303030; border-left: none;
-            border-radius: 0 40px 40px 0; width: 64px; height: 40px;
-            color: white; cursor: pointer;
-        }
-
-        .container {
-            margin-top: 56px; display: flex; justify-content: center;
-            padding: 24px; gap: 24px; max-width: 1700px; margin-left: auto; margin-right: auto;
-        }
+        .search-bar { display: flex; width: 100%; background: #121212; border: 1px solid #303030; border-radius: 40px 0 0 40px; padding: 0 16px; }
+        .search-bar input { width: 100%; background: transparent; border: none; color: white; height: 38px; font-size: 16px; outline: none; }
+        .search-btn { background: #222; border: 1px solid #303030; border-left: none; border-radius: 0 40px 40px 0; width: 64px; height: 40px; color: white; cursor: pointer; }
+        .container { margin-top: 56px; display: flex; justify-content: center; padding: 24px; gap: 24px; max-width: 1700px; margin-left: auto; margin-right: auto; }
         .main-content { flex: 1; min-width: 0; }
         .sidebar { width: 400px; flex-shrink: 0; }
-
-        .player-container {
-            width: 100%; aspect-ratio: 16 / 9;
-            background: black; border-radius: 12px; overflow: hidden;
-        }
+        .player-container { width: 100%; aspect-ratio: 16 / 9; background: black; border-radius: 12px; overflow: hidden; }
         .player-container video, .player-container iframe { width: 100%; height: 100%; border: none; }
-
         .video-title { font-size: 20px; font-weight: bold; margin: 12px 0; line-height: 28px; }
         .owner-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .owner-info { display: flex; align-items: center; gap: 12px; }
         .owner-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         .channel-name { font-weight: bold; font-size: 16px; }
-        
-        .btn-sub {
-            background: white; color: black; border: none;
-            padding: 0 16px; height: 36px; border-radius: 18px;
-            font-weight: bold; cursor: pointer;
-        }
-        .action-btn {
-            background: var(--bg-secondary); border: none; color: white;
-            padding: 0 16px; height: 36px; border-radius: 18px;
-            cursor: pointer; font-size: 14px;
-        }
-
-        .description-box {
-            background: var(--bg-secondary); border-radius: 12px;
-            padding: 12px; font-size: 14px; margin-bottom: 24px;
-        }
-
+        .btn-sub { background: white; color: black; border: none; padding: 0 16px; height: 36px; border-radius: 18px; font-weight: bold; cursor: pointer; }
+        .action-btn { background: var(--bg-secondary); border: none; color: white; padding: 0 16px; height: 36px; border-radius: 18px; cursor: pointer; font-size: 14px; }
+        .description-box { background: var(--bg-secondary); border-radius: 12px; padding: 12px; font-size: 14px; margin-bottom: 24px; }
         .comment-item { display: flex; gap: 16px; margin-bottom: 20px; }
         .comment-avatar { width: 40px; height: 40px; border-radius: 50%; }
         .comment-author { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; }
+
+        /* Shorts Shelf Design */
+        .shorts-shelf-container { margin-bottom: 24px; border-bottom: 4px solid var(--bg-secondary); padding-bottom: 16px; }
+        .shorts-shelf-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        .shorts-shelf-title img { width: 24px; height: 24px; }
+        .shorts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .short-card { text-decoration: none; color: inherit; display: block; }
+        .short-thumb { aspect-ratio: 9/16; border-radius: 8px; overflow: hidden; background: #222; }
+        .short-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .short-info { margin-top: 6px; }
+        .short-title { font-size: 14px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .short-views { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 
         .rec-item { display: flex; gap: 8px; margin-bottom: 12px; cursor: pointer; text-decoration: none; color: inherit; }
         .rec-thumb { width: 160px; height: 90px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #222; }
@@ -594,195 +379,78 @@ app.get("/video/:id", async (req, res, next) => {
         .rec-title { font-size: 14px; font-weight: bold; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .rec-meta { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
 
-        /* Shorts セクション用スタイル（既存コードは変更せず追加のみ） */
-        .shorts-section {
-            margin-bottom: 16px;
-        }
-        .shorts-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 0 8px 0;
-        }
-        .shorts-icon {
-            color: var(--yt-red);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .shorts-icon i {
-            font-size: 18px;
-        }
-        .shorts-title-text {
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .shorts-list {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-        }
-        .shorts-list::-webkit-scrollbar {
-            height: 6px;
-        }
-        .shorts-list::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 3px;
-        }
-        .shorts-item {
-            flex: 0 0 150px;
-            text-decoration: none;
-            color: inherit;
-            cursor: pointer;
-        }
-        .shorts-thumb {
-            width: 100%;
-            aspect-ratio: 9 / 16;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #222;
-        }
-        .shorts-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .shorts-item-title {
-            font-size: 13px;
-            font-weight: bold;
-            margin-top: 6px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .shorts-item-meta {
-            font-size: 11px;
-            color: var(--text-sub);
-            margin-top: 2px;
-        }
-
-        @media (max-width: 1000px) {
-            .container { flex-direction: column; padding: 0; }
-            .sidebar { width: 100%; padding: 16px; box-sizing: border-box; }
-            .player-container { border-radius: 0; }
-            .main-content { padding: 16px; }
-        }
+        @media (max-width: 1000px) { .container { flex-direction: column; padding: 0; } .sidebar { width: 100%; padding: 16px; box-sizing: border-box; } .player-container { border-radius: 0; } .main-content { padding: 16px; } }
     </style>
 </head>
 <body>
-
 <nav class="navbar">
-    <div class="nav-left">
-        <a href="/" class="logo"><i class="fab fa-youtube"></i>YouTube Pro</a>
-    </div>
-    <div class="nav-center">
-        <form class="search-bar" action="/nothing/search">
-            <input type="text" name="q" placeholder="検索">
-            <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
-        </form>
-    </div>
+    <div class="nav-left"><a href="/" class="logo"><i class="fab fa-youtube"></i>YouTube Pro</a></div>
+    <div class="nav-center"><form class="search-bar" action="/nothing/search"><input type="text" name="q" placeholder="検索"><button type="submit" class="search-btn"><i class="fas fa-search"></i></button></form></div>
     <div style="width:100px;"></div>
 </nav>
 
 <div class="container">
     <div class="main-content">
-        <div class="player-container">
-            ${streamEmbed}
-        </div>
+        <div class="player-container">${streamEmbed}</div>
         <h1 class="video-title">${videoData.videoTitle}</h1>
         <div class="owner-row">
-            <div class="owner-info">
-                <img src="${videoData.channelImage || 'https://via.placeholder.com/40'}">
-                <div class="channel-name">${videoData.channelName}</div>
-                <button class="btn-sub">チャンネル登録</button>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="action-btn">👍 ${videoData.likeCount || 0}</button>
-                <button class="action-btn">共有</button>
-            </div>
+            <div class="owner-info"><img src="${videoData.channelImage || 'https://via.placeholder.com/40'}"><div class="channel-name">${videoData.channelName}</div><button class="btn-sub">チャンネル登録</button></div>
+            <div style="display:flex; gap:8px;"><button class="action-btn">👍 ${videoData.likeCount || 0}</button><button class="action-btn">共有</button></div>
         </div>
-        <div class="description-box">
-            <b>${videoData.videoViews || '0'} 回視聴</b><br><br>
-            ${videoData.videoDes || ''}
-        </div>
+        <div class="description-box"><b>${videoData.videoViews || '0'} 回視聴</b><br><br>${videoData.videoDes || ''}</div>
         <div class="comments-section">
             <h3>コメント ${commentsData.commentCount} 件</h3>
-            ${commentsData.comments.map(c => `
-                <div class="comment-item">
-                    <img class="comment-avatar" src="${c.authorThumbnails?.[0]?.url || ''}">
-                    <div>
-                        <span class="comment-author">${c.author}</span>
-                        <div style="font-size:14px;">${c.content}</div>
-                    </div>
-                </div>
-            `).join('')}
+            ${commentsData.comments.map(c => `<div class="comment-item"><img class="comment-avatar" src="${c.authorThumbnails?.[0]?.url || ''}"><div><span class="comment-author">${c.author}</span><div style="font-size:14px;">${c.content}</div></div></div>`).join('')}
         </div>
     </div>
     <div class="sidebar">
+        <div id="shortsShelf" class="shorts-shelf-container" style="display:none;">
+            <div class="shorts-shelf-title">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Youtube_shorts_icon.svg">
+                Shorts
+            </div>
+            <div id="shortsGrid" class="shorts-grid"></div>
+        </div>
         <div id="recommendations"></div>
     </div>
 </div>
 
 <script>
     async function loadRecommendations() {
-        const params = new URLSearchParams({
-            title: "${videoData.videoTitle}",
-            channel: "${videoData.channelName}",
-            id: "${videoId}"
-        });
-        const res = await fetch(`/api/recommendations?${params.toString()}`);
+        const params = new URLSearchParams({ title: "${videoData.videoTitle}", channel: "${videoData.channelName}", id: "${videoId}" });
+        const res = await fetch(\`/api/recommendations?\${params.toString()}\`);
         const data = await res.json();
+        
+        const shorts = data.items.filter(item => item.title.includes('#'));
+        const regulars = data.items.filter(item => !item.title.includes('#'));
 
-        const normalItems = [];
-        const shortItems = [];
-
-        (data.items || []).forEach(item => {
-            const title = item.title || "";
-            if (title.includes("#")) {
-                shortItems.push(item);
-            } else {
-                normalItems.push(item);
-            }
-        });
-
-        const container = document.getElementById('recommendations');
-        let html = '';
-
-        if (shortItems.length > 0) {
-            html += `
-                <div class="shorts-section">
-                    <div class="shorts-header">
-                        <span class="shorts-icon"><i class="fas fa-bolt"></i></span>
-                        <span class="shorts-title-text">ショート動画</span>
+        // Render Shorts Grid
+        if (shorts.length > 0) {
+            const shelf = document.getElementById('shortsShelf');
+            const grid = document.getElementById('shortsGrid');
+            shelf.style.display = 'block';
+            grid.innerHTML = shorts.slice(0, 4).map(item => \`
+                <a href="/video/\${item.id}" class="short-card">
+                    <div class="short-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/hq720.jpg"></div>
+                    <div class="short-info">
+                        <div class="short-title">\${item.title}</div>
+                        <div class="short-views">\${item.viewCountText || ''}</div>
                     </div>
-                    <div class="shorts-list">
-                        ${shortItems.map(item => `
-                            <a href="/video/${item.id}" class="shorts-item">
-                                <div class="shorts-thumb">
-                                    <img src="https://i.ytimg.com/vi/${item.id}/hqdefault.jpg" alt="${item.title}">
-                                </div>
-                                <div class="shorts-item-title">${item.title}</div>
-                                <div class="shorts-item-meta">${item.channelTitle}</div>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+                </a>
+            \`).join('');
         }
 
-        html += normalItems.map(item => `
-            <a href="/video/${item.id}" class="rec-item">
-                <div class="rec-thumb"><img src="https://i.ytimg.com/vi/${item.id}/mqdefault.jpg" alt="${item.title}"></div>
+        // Render Regular List
+        document.getElementById('recommendations').innerHTML = regulars.map(item => \`
+            <a href="/video/\${item.id}" class="rec-item">
+                <div class="rec-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/mqdefault.jpg"></div>
                 <div class="rec-info">
-                    <div class="rec-title">${item.title}</div>
-                    <div class="rec-meta">${item.channelTitle}</div>
+                    <div class="rec-title">\${item.title}</div>
+                    <div class="rec-meta">\${item.channelTitle}</div>
+                    <div class="rec-meta">\${item.viewCountText || ''}</div>
                 </div>
             </a>
-        `).join('');
-
-        container.innerHTML = html;
+        \`).join('');
     }
     window.onload = loadRecommendations;
 </script>

@@ -241,6 +241,114 @@ app.get("/video/:id", async (req, res, next) => {
       } catch (e) {}
     }
 
+    // タイトルに # が含まれているか判定
+    const isShortForm = videoData.videoTitle.includes('#');
+
+    if (isShortForm) {
+      // --- SHORTS MODE HTML ---
+      const shortsHtml = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${videoData.videoTitle}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        .shorts-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .video-wrapper { position: relative; width: 100%; height: 100%; max-width: 500px; background: #000; }
+        video, iframe { width: 100%; height: 100%; object-fit: cover; border: none; }
+        
+        .overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; background: linear-gradient(transparent, rgba(0,0,0,0.8)); z-index: 10; }
+        .channel-info { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .channel-info img { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #fff; }
+        .channel-name { font-weight: bold; font-size: 16px; }
+        .video-desc { font-size: 14px; margin-bottom: 40px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .side-actions { position: absolute; right: 10px; bottom: 100px; display: flex; flex-direction: column; gap: 20px; align-items: center; z-index: 11; }
+        .action-item { display: flex; flex-direction: column; align-items: center; font-size: 12px; cursor: pointer; }
+        .action-item i { font-size: 28px; margin-bottom: 5px; }
+
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .loading-screen.active { opacity: 1; }
+        
+        .back-btn { position: absolute; top: 20px; left: 20px; z-index: 20; font-size: 24px; color: #fff; text-decoration: none; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <div id="loader" class="loading-screen"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>
+
+    <div class="shorts-container" id="shortsContainer">
+        <div class="video-wrapper">
+            ${videoData.stream_url !== "youtube-nocookie" 
+                ? `<video id="mainVideo" src="${videoData.stream_url}" autoplay loop playsinline></video>` 
+                : `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}" allow="autoplay"></iframe>`
+            }
+            
+            <div class="overlay">
+                <div class="channel-info">
+                    <img src="${videoData.channelImage || 'https://via.placeholder.com/40'}">
+                    <span class="channel-name">${videoData.channelName}</span>
+                </div>
+                <div class="video-desc">${videoData.videoTitle}</div>
+            </div>
+
+            <div class="side-actions">
+                <div class="action-item"><i class="fas fa-thumbs-up"></i><span>${videoData.likeCount || 'Like'}</span></div>
+                <div class="action-item"><i class="fas fa-comment-dots"></i><span>${commentsData.commentCount || 0}</span></div>
+                <div class="action-item"><i class="fas fa-share"></i><span>共有</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startY = 0;
+        const container = document.getElementById('shortsContainer');
+        const loader = document.getElementById('loader');
+
+        // 次のショート動画を検索して遷移する
+        async function loadNextShort() {
+            loader.classList.add('active');
+            try {
+                const params = new URLSearchParams({
+                    title: "${videoData.videoTitle}",
+                    channel: "${videoData.channelName}",
+                    id: "${videoId}"
+                });
+                const res = await fetch(\`/api/recommendations?\${params.toString()}\`);
+                const data = await res.json();
+                
+                // タイトルに # が含まれる動画を優先的に探す
+                const nextShort = data.items.find(item => item.title.includes('#')) || data.items[0];
+                
+                if (nextShort) {
+                    window.location.href = '/video/' + nextShort.id;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (e) {
+                window.location.href = '/';
+            }
+        }
+
+        // スワイプ・スクロール検知
+        window.addEventListener('touchstart', e => startY = e.touches[0].pageY);
+        window.addEventListener('touchend', e => {
+            const endY = e.changedTouches[0].pageY;
+            if (startY - endY > 100) loadNextShort(); // 下から上へのスワイプ
+        });
+        window.addEventListener('wheel', e => {
+            if (e.deltaY > 50) loadNextShort(); // 下へのスクロール
+        });
+    </script>
+</body>
+</html>`;
+      return res.send(shortsHtml);
+    }
+
+    // --- STANDARD VIDEO MODE HTML ---
     const streamEmbed = videoData.stream_url !== "youtube-nocookie"
       ? `<video controls autoplay poster="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg">
            <source src="${videoData.stream_url}" type="video/mp4">

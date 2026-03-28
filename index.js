@@ -588,10 +588,6 @@ const shortsHtml = `
     res.send(html);
   } catch (err) { next(err); }
 });
-    `;
-    res.send(html);
-  } catch (err) { next(err); }
-});
 
 app.get("/nothing/*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "home.html"));

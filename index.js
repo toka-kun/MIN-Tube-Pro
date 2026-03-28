@@ -191,39 +191,34 @@ app.get("/video/:id", async (req, res, next) => {
     let commentsData = { commentCount: 0, comments: [] };
     let successfulApi = null;
 
-    // サーバーのベースURLを取得（Node.jsでの相対fetch用）
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers.host;
-    const localBase = `${protocol}://${host}`;
 
     for (const apiBase of apiListCache) {
       try {
-        // 1. メインのAPIを5秒タイムアウトで試行
         const response = await fetchWithTimeout(`${apiBase}/api/video/${videoId}`, {}, 5000);
         if (response.ok) {
           const data = await response.json();
           if (data.stream_url) {
             videoData = data;
             successfulApi = apiBase;
-            break; // 成功したのでループを抜ける
+            break;
           }
         }
-        // 失敗した場合はエラーを投げて catch ブロック（代替フェッチ）へ
-        throw new Error("Primary API failed or no stream_url");
+        throw new Error("Fetch failed");
       } catch (e) {
-        // 2. 5秒経過、または接続エラーが発生した際の代わりとして /rapid/動画ID をfetch
         try {
-          const rapidRes = await fetchWithTimeout(`${localBase}/rapid/${videoId}`, {}, 5000);
+          const rapidRes = await fetchWithTimeout(`${protocol}://${host}/rapid/${videoId}`, {}, 5000);
           if (rapidRes.ok) {
             const rapidData = await rapidRes.json();
             if (rapidData.stream_url) {
               videoData = rapidData;
-              break; // 代替で取得できたらループを抜ける
+              // 【修正箇所】Rapidで成功した場合も、コメント取得のためにapiBaseを保持してループを抜ける
+              successfulApi = apiBase; 
+              break; 
             }
           }
-        } catch (rapidErr) {
-          // 代替も失敗した場合は、次の apiBase のループへ進む
-        }
+        } catch (rapidErr) {}
         continue;
       }
     }
@@ -232,6 +227,7 @@ app.get("/video/:id", async (req, res, next) => {
       videoData = { videoTitle: "再生できない動画", stream_url: "youtube-nocookie" };
     }
 
+    // 【この共通処理】successfulApi がセットされていれば、Rapid経由の動画でもコメントを取得しにいく
     if (successfulApi) {
       try {
         const cRes = await fetchWithTimeout(`${successfulApi}/api/comments/${videoId}`, {}, 3000);

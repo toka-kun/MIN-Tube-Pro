@@ -1,711 +1,650 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>min2 Chat</title>
-  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>オープンチャット + Othello（完全版）</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     :root{
-      --bg: #0f1221;
-      --panel: #171a2b;
-      --panel-2: #121527;
-      --text: #e8ebff;
-      --muted: #a7b0d6;
-      --accent: #6c8cff;
-      --accent-2: #a46cff;
-      --danger: #ff5b6e;
-      --success: #4cd38a;
-      --warning: #ffd35b;
-      --border: #252a45;
-      --bubble: #1c2040;
-      --bubble-self: #2a356b;
-      --shadow: 0 10px 30px rgba(0,0,0,0.35);
-      --radius: 14px;
-      --radius-sm: 10px;
-      --radius-lg: 22px;
+      --bg:#ffffff;
+      --line:#e9e9e9;
+      --text:#111111;
+      --muted:#666666;
+      --accent:#0b5fff;
+      --black:#111111;
+      --white:#ffffff;
+      --radius:8px;
+      font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Helvetica Neue",Arial,sans-serif;
     }
-    * { box-sizing: border-box; }
-    html, body { height:100%; margin:0; padding:0; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-        "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
-      background:
-        radial-gradient(1200px 600px at -10% -10%, rgba(108,140,255,0.18), transparent 60%),
-        radial-gradient(800px 500px at 110% -10%, rgba(164,108,255,0.18), transparent 60%),
-        radial-gradient(900px 500px at 50% 110%, rgba(76,211,138,0.10), transparent 60%),
-        var(--bg);
-      color: var(--text);
+
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+    .composer-fixed{
+      position:fixed;left:0;right:0;top:0;background:linear-gradient(180deg, rgba(255,255,255,0.995), rgba(255,255,255,1));
+      border-bottom:1px solid var(--line);padding:12px 0;z-index:1200;
+      box-shadow:0 6px 18px rgba(0,0,0,0.04);
     }
-    .app {
-      display:flex; flex-direction:column; height:100dvh; max-width:900px; margin:0 auto;
+    .composer-inner{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;gap:12px;align-items:flex-start}
+    .composer-avatar{width:44px;height:44px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);flex-shrink:0}
+    .composer-right{flex:1;display:flex;flex-direction:column;gap:8px}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type="text"], textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);font-size:14px}
+    textarea{min-height:64px;resize:vertical}
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);color:#fff;border:none;padding:9px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600}
+
+
+    .page-wrap{max-width:1200px;margin:0 auto;padding:20px 16px 120px;box-sizing:border-box}
+    .header{padding:12px 0 18px;border-bottom:1px solid var(--line);margin-bottom:12px}
+    .brand{font-weight:700;font-size:18px}
+    .subtitle{color:var(--muted);font-size:13px;margin-top:4px}
+
+ 
+    .split { display: grid; grid-template-columns: 1fr 520px; gap: 12px; align-items:start; max-width:1200px; margin:0 auto; }
+    @media(max-width:1100px){ .split { grid-template-columns: 1fr 1fr; } }
+
+
+    .chat-column{background:transparent;display:flex;flex-direction:column;gap:8px;min-height:320px}
+    .message{display:flex;gap:12px;padding:12px;border:1px solid var(--line);border-radius:8px;align-items:flex-start;background:#fff}
+    .avatar{width:44px;height:44px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+    .body{flex:1}
+    .meta{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+    .name{font-weight:700;font-size:13px}
+    .time{color:var(--muted);font-size:12px}
+    .text{white-space:pre-wrap;color:var(--text);line-height:1.7;font-size:15px}
+    .reactions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    .reaction{border:1px solid var(--line);background:#fff;padding:6px 8px;border-radius:999px;color:var(--muted);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:0.2s}
+    .reaction:hover{background:#f9f9f9}
+    .reaction strong{color:var(--text);font-weight:700}
+
+
+    .admin-badge{display:inline-block;margin-left:8px;padding:4px 8px;border-radius:999px;background:#ffb400;color:#111;font-weight:700;font-size:12px}
+
+
+    .system-note{background:#f5f7ff;border-left:4px solid #0b5fff}
+
+
+    .othello-panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;box-sizing:border-box}
+    .rooms{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+    .room-item{padding:8px;border:1px solid var(--line);border-radius:8px;background:#fafafa;display:flex;justify-content:space-between;align-items:center}
+    .board{display:grid;grid-template-columns:repeat(8,52px);grid-template-rows:repeat(8,52px);gap:6px;margin-top:8px}
+    .cell{width:52px;height:52px;background:#2b7a2b;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.06)}
+    .cell.disabled{cursor:default;opacity:0.9}
+    .disc{width:40px;height:40px;border-radius:50%;box-shadow:0 6px 14px rgba(0,0,0,0.18)}
+    .black{background:var(--black)}
+    .white{background:var(--white);border:1px solid #ccc}
+    .last-move{outline:3px solid rgba(11,95,255,0.18);border-radius:8px}
+    .legal-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.95);position:absolute}
+    .turn-indicator{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .badge{padding:6px 10px;border-radius:999px;font-weight:700;color:#fff}
+    .badge.black{background:var(--black)}
+    .badge.white{background:var(--white);color:#111;border:1px solid #ccc}
+
+    /* 結果アニメーション */
+    .overlay{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2000}
+    .result-card{pointer-events:auto;min-width:280px;padding:28px 32px;border-radius:12px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.18);transform:translateY(-20px);opacity:0;animation:pop 700ms forwards}
+    .result-card.win{background:linear-gradient(135deg,#0b5fff,#3fb0ff);color:#fff}
+    .result-card.lose{background:linear-gradient(135deg,#444,#777);color:#fff}
+    .result-title{font-size:28px;font-weight:900;margin-bottom:8px}
+    .result-sub{font-size:16px;opacity:0.95}
+    @keyframes pop { to { transform:translateY(0); opacity:1; } }
+
+    @media (max-width:640px){
+      .composer-inner{padding:0 12px}
+      .row{flex-direction:column}
+      .board{transform:scale(0.9);transform-origin:left top}
     }
-    header.appbar {
-      position:sticky; top:0; z-index:10;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 16px;
-      background: linear-gradient(180deg, rgba(23,26,43,0.9), rgba(23,26,43,0.75));
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--border);
-      box-shadow:var(--shadow);
-    }
-    .brand { display:flex; align-items:center; gap:10px; }
-    .logo {
-      width:28px; height:28px; border-radius:10px;
-      background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--success), var(--accent));
-      box-shadow: 0 0 20px rgba(108,140,255,0.45), inset 0 0 20px rgba(255,255,255,0.05);
-    }
-    .title { font-weight:700; letter-spacing:0.2px; }
-    .status {
-      display:flex; align-items:center; gap:8px; font-size:13px; color: var(--muted);
-    }
-    .dot {
-      width:10px; height:10px; border-radius:50%;
-      background: var(--warning);
-      box-shadow:0 0 0 4px rgba(255,211,91,0.15);
-    }
-    .dot.online {
-      background: var(--success);
-      box-shadow:0 0 0 4px rgba(76,211,138,0.15);
-    }
-    .dot.offline {
-      background: var(--danger);
-      box-shadow:0 0 0 4px rgba(255,91,110,0.15);
-    }
-    .toolbar { display:flex; gap:8px; }
-    button.btn {
-      appearance:none; border:1px solid var(--border); color: var(--text);
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer;
-      transition:transform .06s ease, border-color .2s ease, background .2s ease;
-    }
-    button.btn:hover { border-color:#2f3761; }
-    button.btn:active { transform: translateY(1px) scale(0.99); }
-    .btn.accent { border-color:#2f3761; }
-    .btn.danger {
-      border-color:#503046;
-      background: linear-gradient(180deg, #3a1b2a, #321727);
-      color:#ffdbe1;
-    }
-    main {
-      flex:1; overflow:auto; padding:14px 12px 0 12px;
-    }
-    .notice {
-      text-align:center; color: var(--muted); font-size:13px; margin:8px 0 16px;
-    }
-    .messages {
-      display:flex; flex-direction:column; gap:10px; padding-bottom:16px;
-    }
-    .msg {
-      display:flex; gap:10px; max-width:92%;
-      transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
-    }
-    .msg.self { align-self:flex-end; flex-direction:row-reverse; }
-    .avatar {
-      width:36px; height:36px; border-radius:10px; background:#1a1f3b;
-      border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
-      color:#b9c3ff; font-weight:700; text-transform:uppercase;
-    }
-    .bubble {
-      background: var(--bubble); border:1px solid var(--border); border-radius:14px;
-      padding:10px 12px; box-shadow:var(--shadow); min-width:120px;
-    }
-    .self .bubble {
-      background: var(--bubble-self); border-color:#36407a;
-    }
-    .meta {
-      display:flex; align-items:center; gap:6px; color: var(--muted); font-size:12px;
-      margin-bottom:6px;
-    }
-    .name { font-weight:700; color:#d6dcff; }
-    .text {
-      white-space:pre-wrap; word-wrap:break-word; line-height:1.5;
-      color: var(--text);
-    }
-    .reactions {
-      display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;
-    }
-    .react, .react-static {
-      display:inline-flex; align-items:center; gap:6px; font-size:13px;
-      padding:6px 8px; border-radius:30px; border:1px solid var(--border);
-      background: linear-gradient(180deg, #181c35, #131731);
-      color:#d8dbff; cursor:pointer; user-select:none;
-      transition:transform .06s ease, border-color .2s ease, background .2s ease;
-    }
-    .react:hover { border-color:#2f3761; }
-    .react:active { transform: translateY(1px) scale(0.99); }
-    .react[disabled] { opacity:0.6; pointer-events:none; }
-    .react-static { cursor:default; opacity:0.9; }
-    footer.composer {
-      position:sticky; bottom:0; z-index:10;
-      background: linear-gradient(180deg, rgba(23,26,43,0.75), rgba(18,21,39,0.9));
-      border-top:1px solid var(--border); padding:12px; box-shadow:var(--shadow);
-    }
-    .row { display:flex; gap:10px; align-items:flex-start; }
-    .input {
-      flex:1; display:flex; padding:8px; gap:8px;
-      border:1px solid var(--border); border-radius:var(--radius);
-      background: linear-gradient(180deg, #151936, #10132b);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
-    }
-    .u-box {
-      display:flex; align-items:center; gap:8px;
-      border-right:1px solid var(--border); padding-right:8px; min-width:120px;
-    }
-    .u-tag {
-      display:flex; align-items:center; gap:8px;
-      border:1px dashed #2a315a; border-radius:10px;
-      padding:6px 8px; color:#c3caff; background:#121631;
-    }
-    .u-edit { margin-left:auto; }
-    textarea {
-      flex:1; resize:none; border:0; outline:0; background:transparent;
-      color: var(--text); font:inherit; padding:4px 2px;
-      min-height:44px; max-height:160px;
-    }
-    .send { display:flex; gap:10px; }
-    .toast {
-      position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
-      background:#121631; color:#e6e9ff; border:1px solid var(--border);
-      border-radius:12px; padding:10px 14px; box-shadow:var(--shadow);
-      font-size:14px; opacity:0; pointer-events:none;
-      transition:opacity .25s ease, transform .25s ease;
-    }
-    .toast.show {
-      opacity:1; pointer-events:auto;
-      transform:translateX(-50%) translateY(-4px);
-    }
-    .modal-backdrop {
-      position:fixed; inset:0; background:rgba(5,6,12,0.55);
-      display:none; align-items:center; justify-content:center;
-      padding:16px; z-index:20;
-    }
-    .modal-backdrop.show { display:flex; }
-    .modal {
-      width:min(520px,100%); background:#141834; border:1px solid var(--border);
-      border-radius:16px; box-shadow:var(--shadow);
-      padding:16px; display:flex; flex-direction:column; gap:12px;
-    }
-    .modal h3 { margin:0; font-size:18px; }
-    .field { display:flex; flex-direction:column; gap:8px; }
-    .field label { font-size:13px; color: var(--muted); }
-    .field input {
-      width:100%; padding:10px; border:1px solid var(--border);
-      border-radius:10px; background:#0f1330; color: var(--text);
-    }
-    .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
-    .kbd {
-      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      background:#121631; border:1px solid var(--border); border-bottom-color:#2a315a;
-      border-radius:8px; padding:2px 6px; color:#c2c9ff;
-    }
-    @media (max-width:600px) {
-      .u-box { display:none; }
-      .msg { max-width:100%; }
-      .toolbar { gap:6px; }
-      button.btn { padding:7px 10px; }
-    }
+    button:focus, input:focus, textarea:focus{outline:3px solid rgba(11,95,255,0.12);outline-offset:2px}
   </style>
 </head>
 <body>
-  <div class="app">
-    <header class="appbar">
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="title">min2 Chat</div>
-      </div>
-      <div class="status">
-        <div id="connDot" class="dot" title="接続状態"></div>
-        <div id="connText">接続中...</div>
-        <span aria-hidden="true">•</span>
-        <div id="userCount">オンライン: -</div>
-      </div>
-      <div class="toolbar">
-        <button id="openUser" class="btn">プロフィール</button>
-        <button id="openAdmin" class="btn danger" title="管理者用">管理</button>
-      </div>
-    </header>
-
-    <main>
-      <div id="notice" class="notice">
-        リロードせずに会話できます。Shift+Enterで改行、Enterで送信。
-      </div>
-      <div id="messages" class="messages" aria-live="polite" aria-busy="true"></div>
-    </main>
-
-    <footer class="composer">
-      <div class="row">
-        <div class="input">
-          <div class="u-box">
-            <div class="u-tag">
-              <span>あなた</span><strong id="usernameTag"></strong>
-            </div>
-            <button id="editUser" class="btn u-edit" title="ユーザー名を編集">
-              編集
-            </button>
+  <div class="composer-fixed" id="composerFixed" role="region" aria-label="投稿欄">
+    <div class="composer-inner">
+      <div class="composer-avatar" id="composerAvatar">U</div>
+      <div class="composer-right">
+        <div class="row">
+          <input id="username" type="text" placeholder="ユーザー名（任意）" style="max-width:260px" maxlength="20" />
+          <input id="seed" type="text" placeholder="seed（任意）" />
+          <button id="toggleOthello" class="btn" style="flex:0 0 auto">オセロ</button>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <button id="adminLoginBtn" class="btn ghost">管理者ログイン</button>
+            <button id="adminModalBtn" class="btn" style="display:none">管理モーダルを表示</button>
           </div>
-          <textarea
-            id="messageInput"
-            placeholder="メッセージを入力..."
-            maxlength="800"
-            aria-label="メッセージ入力"
-          ></textarea>
         </div>
-        <div class="send">
-          <button id="sendBtn" class="btn accent">送信</button>
+        <textarea id="messageInput" placeholder="コメントを入力（Shift+Enterで改行、Enterで送信）" maxlength="200"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="color:var(--muted);font-size:13px">公開チャットです。節度ある投稿をお願いします。</div>
+          <div class="controls">
+            <button class="btn ghost" id="clearBtn">全削除（管理）</button>
+            <button class="btn" id="sendBtn">送信</button>
+          </div>
         </div>
-      </div>
-    </footer>
-  </div>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <!-- プロフィールモーダル -->
-  <div
-    id="userModal"
-    class="modal-backdrop"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="userTitle"
-  >
-    <div class="modal">
-      <h3 id="userTitle">プロフィール</h3>
-      <div class="field">
-        <label for="username">ユーザー名（1〜24文字）</label>
-        <input id="username" type="text" maxlength="24" placeholder="例: たろう" />
-      </div>
-      <div class="field">
-        <label for="seed" title="この端末の識別子（自動生成・安全に保存）">
-          あなたの識別子 <span class="kbd">seed</span>
-        </label>
-        <input id="seed" type="text" readonly />
-      </div>
-      <div class="actions">
-        <button id="userCancel" class="btn">閉じる</button>
-        <button id="userSave" class="btn accent">保存</button>
       </div>
     </div>
   </div>
 
-  <!-- 管理モーダル -->
-  <div
-    id="adminModal"
-    class="modal-backdrop"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="adminTitle"
-  >
-    <div class="modal">
-      <h3 id="adminTitle">管理パネル</h3>
-      <div class="field">
-        <label for="adminPass">パスワード</label>
-        <input id="adminPass" type="password" placeholder="入力してください" />
-      </div>
-      <div class="actions">
-        <button id="adminClose" class="btn">閉じる</button>
-        <button id="clearBtn" class="btn danger">全メッセージ削除</button>
-      </div>
+  <div id="mainWrap" class="page-wrap" role="main">
+
+    <div id="splitContainer">
+      <div id="chatColumn" class="chat-column" aria-live="polite" aria-atomic="false"></div>
+
+      <aside id="othelloPanel" class="othello-panel" style="display:none" aria-hidden="true">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">オセロ</div>
+          <div style="color:var(--muted)">部屋を作成して待機、他のユーザーが参加すると対戦が始まります。観戦も可能です。</div>
+        </div>
+
+        <div id="roomsControls" style="margin-top:8px">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="roomInput" placeholder="部屋ID（任意）" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:8px" />
+            <button id="createRoomBtn" class="btn">新しく作る</button>
+            <button id="refreshRoomsBtn" class="btn ghost">更新</button>
+          </div>
+          <div class="rooms" id="roomsList" aria-live="polite"></div>
+        </div>
+
+        <div id="gameArea" style="display:none;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700" id="currentRoomLabel">部屋: -</div>
+            <div class="info" id="playersLabel">参加者: -</div>
+          </div>
+
+          <div class="turn-indicator" id="turnIndicator">
+            <div class="label">現在の手番</div>
+            <div id="turnBadge" class="badge" style="margin-left:8px"></div>
+            <div style="margin-left:auto">
+              <span class="badge black">黒</span>
+              <span style="width:8px;display:inline-block"></span>
+              <span class="badge white" style="color:#111;border:1px solid #ccc">白</span>
+            </div>
+          </div>
+
+          <div id="board" class="board" role="grid" aria-label="オセロ盤"></div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <div class="info" id="statusLabel">状態: -</div>
+            <div>
+              <button id="joinGameBtn" class="btn">対戦参加</button>
+              <button id="leaveRoomBtn" class="btn ghost">退出</button>
+            </div>
+          </div>
+          <div class="info" id="countsLabel" style="margin-top:8px">黒: 0 / 白: 0</div>
+        </div>
+      </aside>
     </div>
   </div>
 
-  <!-- Socket.IO クライアント -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <div id="overlay" class="overlay" style="display:none"></div>
+
   <script>
-    (() => {
-      'use strict';
+    const BASE = 'https://studying-tt.onrender.com';
+    const socket = io(BASE, { transports: ['websocket','polling'] });
 
-      const SERVER_URL = 'https://one.linco.cl';
+    /* Elements */
+    const composerFixed = document.getElementById('composerFixed');
+    const pageWrap = document.getElementById('mainWrap');
+    const chatColumn = document.getElementById('chatColumn');
+    const sendBtn = document.getElementById('sendBtn');
+    const usernameInput = document.getElementById('username');
+    const messageInput = document.getElementById('messageInput');
+    const seedInput = document.getElementById('seed');
+    const composerAvatar = document.getElementById('composerAvatar');
+    const clearBtn = document.getElementById('clearBtn');
+    const toggleOthelloBtn = document.getElementById('toggleOthello');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const adminModalBtn = document.getElementById('adminModalBtn');
 
-      let socket = null;
-      let messages = [];
-      let mySeed = null;
-      let myName = null;
-      let sending = false;
+    const othelloPanel = document.getElementById('othelloPanel');
+    const roomsList = document.getElementById('roomsList');
+    const createRoomBtn = document.getElementById('createRoomBtn');
+    const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
+    const roomInput = document.getElementById('roomInput');
+    const gameArea = document.getElementById('gameArea');
+    const currentRoomLabel = document.getElementById('currentRoomLabel');
+    const playersLabel = document.getElementById('playersLabel');
+    const boardEl = document.getElementById('board');
+    const statusLabel = document.getElementById('statusLabel');
+    const countsLabel = document.getElementById('countsLabel');
+    const joinGameBtn = document.getElementById('joinGameBtn');
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+    const roomsControls = document.getElementById('roomsControls');
+    const turnBadge = document.getElementById('turnBadge');
+    const overlay = document.getElementById('overlay');
 
-      const el = {
-        connDot: document.getElementById('connDot'),
-        connText: document.getElementById('connText'),
-        userCount: document.getElementById('userCount'),
-        messages: document.getElementById('messages'),
-        notice: document.getElementById('notice'),
-        usernameTag: document.getElementById('usernameTag'),
-        input: document.getElementById('messageInput'),
-        send: document.getElementById('sendBtn'),
-        toast: document.getElementById('toast'),
-        userModal: document.getElementById('userModal'),
-        userOpen: document.getElementById('openUser'),
-        userEdit: document.getElementById('editUser'),
-        userSave: document.getElementById('userSave'),
-        userCancel: document.getElementById('userCancel'),
-        username: document.getElementById('username'),
-        seed: document.getElementById('seed'),
-        adminModal: document.getElementById('adminModal'),
-        adminOpen: document.getElementById('openAdmin'),
-        adminClose: document.getElementById('adminClose'),
-        adminPass: document.getElementById('adminPass'),
-        clearBtn: document.getElementById('clearBtn'),
-      };
+    let messages = [];
+    let currentRoom = null;
+    let gameState = null;
+    let myColor = null;
+    let adminList = [];
+    let adminRedirectUrl = null;
 
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const showToast = (msg, ms = 1800) => {
-        el.toast.textContent = msg;
-        el.toast.classList.add('show');
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => el.toast.classList.remove('show'), ms);
-      };
-      const nowTimeString = () => {
-        const d = new Date();
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        return `${y}/${m}/${day} ${hh}:${mm}`;
-      };
-      const makeSeed = () => {
-        if (crypto && crypto.getRandomValues) {
-          const arr = new Uint8Array(16);
-          crypto.getRandomValues(arr);
-          return [...arr].map(x => x.toString(16).padStart(2, '0')).join('');
-        }
-        return Math.random().toString(36).slice(2) + Date.now().toString(36);
-      };
-      const initials = name => (name || '?').trim().slice(0,2).toUpperCase();
-      const isAtBottom = () => {
-        const m = document.querySelector('main');
-        return m.scrollHeight - m.scrollTop - m.clientHeight < 80;
-      };
-      const scrollToBottom = smooth => {
-        const m = document.querySelector('main');
-        m.scrollTo({ top: m.scrollHeight, behavior: smooth ? 'smooth':'auto' });
-      };
-      const sanitizeText = t => String(t||'').replace(/\u0000/g, '');
-      const isDuplicate = msg => messages.some(m =>
-        m.seed===msg.seed &&
-        m.time===msg.time &&
-        m.message===msg.message &&
-        m.username===msg.username
-      );
+    /* Utilities */
+    function avatarText(name){ if(!name) return 'U'; return name.trim().slice(0,2).toUpperCase(); }
+    function formatTime(ts){ try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; } }
+    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-      const storage = {
-        get name(){ return localStorage.getItem('chat_username')||''; },
-        set name(v){ localStorage.setItem('chat_username', v); },
-        get seed(){ return localStorage.getItem('chat_seed')||''; },
-        set seed(v){ localStorage.setItem('chat_seed', v); },
-      };
+    /* Impersonation Prevention: Seed Encryption Logic */
+    async function getEncryptedSeed(seed) {
+      if (!seed) return "（Seed未設定：匿名ユーザー）";
+      const msgUint8 = new TextEncoder().encode(seed);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      // ハッシュの最初の16文字を識別子として利用
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+    }
 
-      function renderAll(){
-        el.messages.innerHTML = '';
-        messages.forEach((msg,i)=> el.messages.appendChild(renderMessage(msg,i)));
-        el.messages.parentElement.setAttribute('aria-busy','false');
-        scrollToBottom(false);
-      }
+    async function showUserIdentity(seed, username) {
+      const encrypted = await getEncryptedSeed(seed);
+      alert(`ユーザー認証情報\n------------------------\n名前: ${username || '匿名'}\n識別子: ${encrypted}\n\n※この「識別子」はSeedから生成されます。同じ名前でも識別子が異なれば別人です。`);
+    }
 
-      function renderMessage(msg,index){
-        const isSelf = msg.seed===mySeed;
-        const wrap = document.createElement('div');
-        wrap.className = 'msg'+(isSelf?' self':'');
-        wrap.dataset.index = index;
+    /* Ensure composer doesn't overlap content */
+    function adjustPagePadding(){
+      const h = composerFixed.getBoundingClientRect().height;
+      pageWrap.style.paddingTop = (h + 20) + 'px';
+    }
+    window.addEventListener('resize', adjustPagePadding);
+    window.addEventListener('load', adjustPagePadding);
+    new ResizeObserver(adjustPagePadding).observe(composerFixed);
 
-        const avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        avatar.textContent = initials(msg.username);
-
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        const nameEl = document.createElement('span');
-        nameEl.className = 'name';
-        nameEl.textContent = sanitizeText(msg.username||'unknown');
-        const dot = document.createElement('span');
-        dot.textContent = '•';
-        dot.style.opacity = '0.6';
-        const timeEl = document.createElement('span');
-        timeEl.textContent = sanitizeText(msg.time||'');
-        meta.append(nameEl, dot, timeEl);
-
-        const textEl = document.createElement('div');
-        textEl.className = 'text';
-        textEl.textContent = sanitizeText(msg.message||'');
-
-        const reactions = document.createElement('div');
-        reactions.className = 'reactions';
-
-        // 👍 と 😡 のみ
-        const defaultReacts = ['👍','😡'];
-        const current = msg.reactions||{};
-        Object.keys(current)
-          .sort((a,b)=> (current[b]||0)-(current[a]||0))
-          .forEach(key=>{
-            const cnt = current[key];
-            if(cnt>0){
-              const chip = document.createElement('span');
-              chip.className = 'react-static';
-              chip.textContent = `${key} ${cnt}`;
-              reactions.appendChild(chip);
-            }
-          });
-
-        defaultReacts.forEach(r=>{
-          const btn = document.createElement('button');
-          btn.className = 'react';
-          btn.type = 'button';
-          btn.setAttribute('aria-label', `リアクション ${r}`);
-          btn.textContent = r;
-          btn.addEventListener('click', ()=>{
-            btn.disabled = true;
-            setTimeout(()=>btn.disabled=false, 1000);  // 連打防止
-            const msgId = Number(wrap.dataset.index);
-            socket.emit('updateReaction', { messageId: msgId, reaction: r });
-          });
-          reactions.appendChild(btn);
-        });
-
-        bubble.append(meta, textEl, reactions);
-        wrap.append(avatar, bubble);
-        return wrap;
-      }
-
-      function updateReactions(id, reactions){
-        const wrap = el.messages.querySelector(`.msg[data-index="${id}"]`);
-        if(!wrap) return;
-        const bar = wrap.querySelector('.reactions');
-        bar.innerHTML = '';
-        Object.keys(reactions||{})
-          .sort((a,b)=> (reactions[b]||0)-(reactions[a]||0))
-          .forEach(key=>{
-            const cnt = reactions[key];
-            if(cnt>0){
-              const chip = document.createElement('span');
-              chip.className = 'react-static';
-              chip.textContent = `${key} ${cnt}`;
-              bar.appendChild(chip);
-            }
-          });
-        ['👍','😡'].forEach(r=>{
-          const btn = document.createElement('button');
-          btn.className = 'react';
-          btn.type = 'button';
-          btn.textContent = r;
-          btn.setAttribute('aria-label', `リアクション ${r}`);
-          btn.addEventListener('click', ()=>{
-            btn.disabled = true;
-            setTimeout(()=>btn.disabled=false,1000);
-            socket.emit('updateReaction', { messageId: id, reaction: r });
-          });
-          bar.appendChild(btn);
-        });
-      }
-
-      async function fetchMessages(){
-        try {
-          el.messages.parentElement.setAttribute('aria-busy','true');
-          const res = await fetch(`${SERVER_URL}/api/messages`, { cache:'no-store' });
-          if(!res.ok) throw 0;
-          const data = await res.json();
-          if(!Array.isArray(data)) throw 0;
-          messages = data;
-          renderAll();
-        } catch {
-          el.messages.parentElement.setAttribute('aria-busy','false');
-          showToast('メッセージ取得に失敗しました');
-        }
-      }
-
-      async function fetchUserCount(){
-        try {
-          const res = await fetch(`${SERVER_URL}/user`, { cache:'no-store' });
-          if(!res.ok) throw 0;
-          const j = await res.json();
-          el.userCount.textContent = `オンライン: ${j.userCount||'-'}`;
-        } catch {
-          el.userCount.textContent = 'オンライン: -';
-        }
-      }
-
-      async function sendMessage(){
-        if(sending) return;
-        const txt = sanitizeText(el.input.value).trim();
-        if(!txt) return;
-        if(!myName){
-          showToast('ユーザー名を設定してください');
-          openUserModal();
-          return;
-        }
-        if(!mySeed){
-          mySeed = storage.seed = makeSeed();
-          el.seed.value = mySeed;
-        }
-        const payload = { username:myName, message:txt, time:nowTimeString(), seed:mySeed };
-        sending = true;
-        el.send.disabled = true;
-        try {
-          const res = await fetch(`${SERVER_URL}/api/messages`, {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if(!res.ok) throw await res.json();
-          el.input.value = '';
-          autoResize(el.input);
-        } catch {
-          showToast('送信に失敗しました');
-        } finally {
-          sending = false;
-          el.send.disabled = false;
-          el.input.focus();
-        }
-      }
-
-      async function clearAllMessages(pass){
-        try {
-          const res = await fetch(`${SERVER_URL}/api/pass`, {
-            method:'POST',
-            headers:{
-              'Content-Type':'application/json',
-              'x-requested-with':'fetch'
-            },
-            body: JSON.stringify({ password:pass })
-          });
-          const j = await res.json().catch(()=>({}));
-          if(!res.ok) throw 0;
-          showToast(j.message||'履歴を削除しました');
-        } catch {
-          showToast('削除に失敗しました');
-        }
-      }
-
-      function setupSocket(){
-        socket = io(SERVER_URL, {
-          transports:['polling'],
-          reconnection: true,
-          reconnectionAttempts: Infinity,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          pingInterval: 20000,
-          pingTimeout: 5000
-        });
-
-        socket.on('connect', ()=>{
-          el.connDot.classList.replace('offline','online');
-          el.connText.textContent = 'オンライン';
-          fetchUserCount();
-        });
-
-        socket.on('disconnect', ()=>{
-          el.connDot.classList.replace('online','offline');
-          el.connText.textContent = '切断';
-        });
-
-        socket.on('newMessage', msg=>{
-          if(isDuplicate(msg)) return;
-          const atBot = isAtBottom();
-          messages.push(msg);
-          el.messages.appendChild(renderMessage(msg, messages.length-1));
-          if(atBot) scrollToBottom(true);
-        });
-
-        socket.on('updateReaction', ({ messageId, reactions })=>{
-          if(typeof messageId !== 'number') return;
-          messages[messageId].reactions = reactions||{};
-          updateReactions(messageId, reactions);
-        });
-
-        socket.on('clearMessages', ()=>{
-          messages = [];
-          el.messages.innerHTML = '';
-          showToast('管理者により履歴が削除されました',2000);
-        });
-      }
-
-      function autoResize(ta){
-        ta.style.height = 'auto';
-        ta.style.height = Math.min(160, Math.max(44, ta.scrollHeight)) + 'px';
-      }
-
-      function openUserModal(){
-        el.username.value = myName||'';
-        el.seed.value = mySeed||'';
-        el.userModal.classList.add('show');
-      }
-      function closeUserModal(){ el.userModal.classList.remove('show'); }
-      function openAdminModal(){
-        el.adminPass.value = '';
-        el.adminModal.classList.add('show');
-        setTimeout(()=>el.adminPass.focus(),0);
-      }
-      function closeAdminModal(){ el.adminModal.classList.remove('show'); }
-
-      el.send.addEventListener('click', sendMessage);
-      el.input.addEventListener('keydown', e=>{
-        if(e.key==='Enter' && !e.shiftKey){
-          e.preventDefault();
-          sendMessage();
-        }
+    /* Reaction button factory */
+    function createReactionButton(emoji, count, messageId){
+      const btn = document.createElement('button');
+      btn.className = 'reaction';
+      btn.innerHTML = `${emoji} <strong>${count}</strong>`;
+      btn.addEventListener('click', () => {
+        socket.emit('updateReaction', { messageId, reaction: emoji });
       });
-      el.input.addEventListener('input', ()=>autoResize(el.input));
+      return btn;
+    }
 
-      el.userOpen.addEventListener('click', openUserModal);
-      el.userEdit.addEventListener('click', openUserModal);
-      el.userCancel.addEventListener('click', closeUserModal);
-      el.userSave.addEventListener('click', ()=>{
-        const v = sanitizeText(el.username.value).trim();
-        if(!v || v.length>24){
-          showToast('ユーザー名は1〜24文字以内で設定してください');
-          return;
-        }
-        myName = v;
-        storage.name = myName;
-        el.usernameTag.textContent = myName;
-        if(!mySeed){
-          mySeed = storage.seed = makeSeed();
-          el.seed.value = mySeed;
-        }
-        closeUserModal();
-        showToast('プロフィールを保存しました');
+    /* Render a single message and prepend to top (newest at top) */
+    function appendMessageElement(m){
+      // message wrapper
+      const item = document.createElement('article');
+      item.className = 'message';
+      item.setAttribute('data-id', m.id);
+
+      // avatar (Clickable)
+      const av = document.createElement('div'); 
+      av.className = 'avatar'; 
+      av.textContent = avatarText(m.username);
+      av.style.cursor = 'pointer';
+      av.title = '識別子を表示';
+      av.onclick = () => showUserIdentity(m.seed, m.username);
+
+      // body
+      const body = document.createElement('div'); body.className = 'body';
+      const meta = document.createElement('div'); meta.className = 'meta';
+      
+      // name (Clickable)
+      const name = document.createElement('div'); 
+      name.className = 'name'; 
+      name.textContent = m.username || '匿名';
+      name.style.cursor = 'pointer';
+      name.title = '識別子を表示';
+      name.onclick = () => showUserIdentity(m.seed, m.username);
+
+      // admin badge guaranteed if username in adminList
+      if(adminList.includes(m.username)){
+        const badge = document.createElement('span'); badge.className = 'admin-badge'; badge.textContent = '管理者';
+        name.appendChild(badge);
+      }
+      const time = document.createElement('div'); time.className = 'time'; time.textContent = formatTime(m.time);
+      meta.appendChild(name); meta.appendChild(time);
+
+      const text = document.createElement('div'); text.className = 'text'; text.textContent = m.message;
+
+      const reactions = document.createElement('div'); reactions.className = 'reactions';
+      const defaultEmojis = ['👍','❤️','😂','😮','😢','😡'];
+      const currentReactions = m.reactions || {};
+      defaultEmojis.forEach(emoji => {
+        const count = currentReactions[emoji] || 0;
+        reactions.appendChild(createReactionButton(emoji, count, m.id));
+      });
+      Object.keys(currentReactions).forEach(k => {
+        if(defaultEmojis.includes(k)) return;
+        const count = currentReactions[k] || 0;
+        reactions.appendChild(createReactionButton(k, count, m.id));
       });
 
-      el.adminOpen.addEventListener('click', openAdminModal);
-      el.adminClose.addEventListener('click', closeAdminModal);
-      el.clearBtn.addEventListener('click', async ()=>{
-        const p = el.adminPass.value;
-        if(!p){
-          showToast('パスワードを入力してください');
-          return;
-        }
-        await clearAllMessages(p);
-        closeAdminModal();
-      });
+      body.appendChild(meta); body.appendChild(text); body.appendChild(reactions);
+      item.appendChild(av); item.appendChild(body);
 
-      [el.userModal, el.adminModal].forEach(modal=>{
-        modal.addEventListener('click', e=>{
-          if(e.target===modal) modal.classList.remove('show');
+      // system messages are rendered same as others
+      if(m.username === 'システム'){
+        item.classList.add('system-note');
+      }
+
+      // Prepend instead of append to keep newest at top
+      chatColumn.prepend(item);
+    }
+
+    /* Load messages from REST and render (latest at top) */
+    async function loadMessages(){
+      try{
+        const res = await fetch(BASE + '/api/messages');
+        if(!res.ok) throw new Error('failed');
+        messages = await res.json();
+        chatColumn.querySelectorAll('.message, .system-note').forEach(n => n.remove());
+        for(let i = 0; i < messages.length; i++) appendMessageElement(messages[i]);
+        adjustPagePadding();
+      }catch(e){ console.error(e); }
+    }
+
+    /* Post message via REST */
+    async function postMessage(){
+      const username = usernameInput.value.trim() || '匿名';
+      const message = messageInput.value.trim();
+      const seed = seedInput.value.trim() || '';
+      if(!message) return;
+      const payload = { username, message, time: new Date().toISOString(), seed };
+      try{
+        const res = await fetch(BASE + '/api/messages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
-      });
+        if(!res.ok){ const err = await res.json(); alert(err.error || '送信に失敗しました'); return; }
+        messageInput.value = '';
+      }catch(e){ console.error(e); }
+    }
 
-      (async ()=>{
-        myName = storage.name;
-        mySeed = storage.seed || makeSeed();
-        storage.seed = mySeed;
-        el.usernameTag.textContent = myName||'未設定';
-        el.seed.value = mySeed;
+    /* Clear messages (admin) */
+    async function clearAll(){
+      const pwd = prompt('管理パスワードを入力してください'); if(!pwd) return;
+      try{
+        const res = await fetch(BASE + '/api/pass', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-requested-with': 'fetch' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if(res.ok){ alert(data.message || '削除しました'); chatColumn.querySelectorAll('.message, .system-note').forEach(n => n.remove()); }
+        else alert(data.error || 'パスワードが違います');
+      }catch(e){ console.error(e); }
+    }
 
-        await fetchMessages();
-        setupSocket();
-        fetchUserCount();
-        // ユーザー数は30秒ごとに更新して負荷軽減
-        setInterval(fetchUserCount, 30000);
-        setTimeout(()=>el.input.focus(),0);
-      })();
-
-      window.addEventListener('beforeunload', e=>{
-        if(el.input.value.trim()){
-          e.preventDefault();
-          e.returnValue = '';
+    /* Admin login flow */
+    async function adminLoginFlow(){
+      const username = usernameInput.value.trim() || '匿名';
+      const password = prompt('管理者パスワードを入力してください');
+      if(!password) return;
+      try{
+        const res = await fetch(BASE + '/api/admin-login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if(res.ok && data.ok){
+          adminRedirectUrl = data.url || null;
+          alert('管理者ログインに成功しました。管理ボタンが表示されます。');
+          adminModalBtn.style.display = adminRedirectUrl ? 'inline-block' : 'inline-block';
+          const r = await fetch(BASE + '/api/admins');
+          if(r.ok) adminList = await r.json();
+          chatColumn.querySelectorAll('.message, .system-note').forEach(n => n.remove());
+          messages.forEach(m => appendMessageElement(m));
+        } else {
+          alert(data.error || 'パスワードが違います');
         }
+      }catch(e){ console.error(e); alert('ログインに失敗しました'); }
+    }
+
+    adminLoginBtn.addEventListener('click', adminLoginFlow);
+    adminModalBtn.addEventListener('click', () => { if(adminRedirectUrl) window.open(adminRedirectUrl, '_blank'); });
+
+    /* Socket handlers */
+    socket.on('connect', () => {});
+    socket.on('newMessage', (msg) => {
+      messages.push(msg);
+      appendMessageElement(msg);
+    });
+
+    socket.on('updateReaction', ({ messageId, reactions }) => {
+      const el = chatColumn.querySelector(`[data-id="${messageId}"]`);
+      if(!el) return;
+      const reactionsEl = el.querySelector('.reactions');
+      if(!reactionsEl) return;
+      reactionsEl.innerHTML = '';
+      Object.keys(reactions).forEach(k => {
+        const count = reactions[k] || 0;
+        reactionsEl.appendChild(createReactionButton(k, count, messageId));
       });
+    });
+
+    socket.on('clearMessages', () => {
+      messages = [];
+      chatColumn.querySelectorAll('.message, .system-note').forEach(n => n.remove());
+    });
+
+    socket.on('adminUpdate', (list) => {
+      adminList = Array.isArray(list) ? list : [];
+      chatColumn.querySelectorAll('.message, .system-note').forEach(n => n.remove());
+      messages.forEach(m => appendMessageElement(m));
+      const me = usernameInput.value.trim() || '匿名';
+      if(adminList.includes(me) && adminRedirectUrl) adminModalBtn.style.display = 'inline-block';
+    });
+
+    /* Othello Logic */
+    async function fetchRooms(){
+      try{
+        const res = await fetch(BASE + '/api/rooms');
+        if(!res.ok) throw new Error('failed');
+        const list = await res.json();
+        renderRooms(list);
+      }catch(e){ console.error(e); roomsList.innerHTML = '<div class="info">ルーム一覧の取得に失敗しました</div>'; }
+    }
+
+    function renderRooms(list){
+      roomsList.innerHTML = '';
+      if(list.length === 0){ roomsList.innerHTML = '<div class="info">現在作成された部屋はありません。</div>'; return; }
+      list.forEach(r => {
+        const item = document.createElement('div'); item.className = 'room-item';
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-weight:700">${escapeHtml(r.id)}</div><div class="info">${r.players.length ? escapeHtml(r.players.join(', ')) + ' が待機中です。' : '待機中のプレイヤーはいません。'}</div>`;
+        const right = document.createElement('div');
+        const joinBtn = document.createElement('button'); joinBtn.className = 'btn'; joinBtn.textContent = '参加';
+        joinBtn.addEventListener('click', () => { const username = usernameInput.value.trim() || '匿名'; socket.emit('joinGame', { roomId: r.id, username }); openRoom(r.id); });
+        const watchBtn = document.createElement('button'); watchBtn.className = 'btn ghost'; watchBtn.textContent = '観戦';
+        watchBtn.addEventListener('click', () => openRoom(r.id, true));
+        right.appendChild(joinBtn); right.appendChild(watchBtn);
+        item.appendChild(left); item.appendChild(right);
+        roomsList.appendChild(item);
+      });
+    }
+
+    createRoomBtn.addEventListener('click', () => {
+      const id = roomInput.value.trim() || ('room-' + Math.random().toString(36).slice(2,8));
+      const username = usernameInput.value.trim() || '匿名';
+      socket.emit('createGame', { roomId: id, username });
+      socket.emit('joinGame', { roomId: id, username });
+      openRoom(id);
+      fetchRooms();
+    });
+
+    refreshRoomsBtn.addEventListener('click', fetchRooms);
+
+    function openRoom(roomId){
+      currentRoom = roomId;
+      socket.emit('joinRoom', { roomId, username: usernameInput.value.trim() || '匿名' });
+      socket.emit('requestGameState', { roomId });
+      othelloPanel.style.display = 'block';
+      othelloPanel.setAttribute('aria-hidden','false');
+      document.getElementById('splitContainer').classList.add('split');
+      currentRoomLabel.textContent = '部屋: ' + roomId;
+      roomsControls.style.display = 'block';
+      fetchRooms();
+    }
+
+    leaveRoomBtn.addEventListener('click', () => {
+      if(!currentRoom) return;
+      socket.emit('leaveRoom', { roomId: currentRoom });
+      currentRoom = null;
+      gameArea.style.display = 'none';
+      othelloPanel.style.display = 'none';
+      othelloPanel.setAttribute('aria-hidden','true');
+      document.getElementById('splitContainer').classList.remove('split');
+      roomsControls.style.display = 'block';
+      hideResult();
+    });
+
+    function buildBoard(){
+      boardEl.innerHTML = '';
+      for(let r=0;r<8;r++){
+        for(let c=0;c<8;c++){
+          const cell = document.createElement('div'); cell.className = 'cell'; cell.dataset.r = r; cell.dataset.c = c;
+          cell.addEventListener('click', () => onCellClick(r,c));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function clearLegalDots(){
+      for(let i=0;i<64;i++){
+        const cell = boardEl.children[i];
+        const dot = cell.querySelector('.legal-dot');
+        if(dot) dot.remove();
+      }
+    }
+
+    function renderBoard(board, lastMove, legalMoves){
+      for(let r=0;r<8;r++){
+        for(let c=0;c<8;c++){
+          const idx = r*8 + c;
+          const cell = boardEl.children[idx];
+          cell.innerHTML = '';
+          cell.classList.remove('last-move');
+          if(lastMove && lastMove.r === r && lastMove.c === c) cell.classList.add('last-move');
+          if(board[r][c] === 1){ const d = document.createElement('div'); d.className = 'disc black'; cell.appendChild(d); }
+          else if(board[r][c] === 2){ const d = document.createElement('div'); d.className = 'disc white'; cell.appendChild(d); }
+        }
+      }
+      clearLegalDots();
+      if(Array.isArray(legalMoves)){
+        legalMoves.forEach(([r,c]) => {
+          const idx = r*8 + c;
+          const cell = boardEl.children[idx];
+          const dot = document.createElement('div'); dot.className = 'legal-dot';
+          cell.appendChild(dot);
+        });
+      }
+    }
+
+    function updateGameState(g){
+      gameState = g;
+      statusLabel.textContent = '状態: ' + g.status;
+      countsLabel.textContent = `黒: ${g.counts ? g.counts.black : 0} / 白: ${g.counts ? g.counts.white : 0}`;
+      const p1 = g.players && g.players[1] ? g.players[1] : '-';
+      const p2 = g.players && g.players[2] ? g.players[2] : '-';
+      playersLabel.textContent = `黒: ${p1} / 白: ${p2}`;
+
+      const me = usernameInput.value.trim() || '匿名';
+      if(g.players){
+        if(g.players[1] === me) myColor = 1;
+        else if(g.players[2] === me) myColor = 2;
+        else myColor = null;
+      } else myColor = null;
+
+      if(g.status === 'playing'){
+        roomsControls.style.display = 'none';
+        gameArea.style.display = 'block';
+        if(g.turn === 1){ turnBadge.textContent = '黒'; turnBadge.className = 'badge black'; }
+        else if(g.turn === 2){ turnBadge.textContent = '白'; turnBadge.className = 'badge white'; }
+        else { turnBadge.textContent = '-'; turnBadge.className = 'badge'; }
+        if(myColor){ joinGameBtn.disabled = true; joinGameBtn.textContent = (myColor===1 ? 'あなた: 黒' : 'あなた: 白'); }
+        else { joinGameBtn.disabled = true; joinGameBtn.textContent = '観戦中'; }
+      } else if(g.status === 'waiting'){
+        roomsControls.style.display = 'block';
+        gameArea.style.display = 'block';
+        joinGameBtn.disabled = false;
+        joinGameBtn.textContent = '対戦参加';
+        turnBadge.textContent = '-';
+        turnBadge.className = 'badge';
+        hideResult();
+      } else if(g.status === 'finished'){
+        roomsControls.style.display = 'none';
+        gameArea.style.display = 'block';
+        showResult(g);
+      }
+      renderBoard(g.board, g.lastMove, g.legalMoves || []);
+      updateCellInteractivity();
+    }
+
+    function updateCellInteractivity(){
+      const isPlayerTurn = gameState && gameState.status === 'playing' && myColor && gameState.turn === myColor;
+      for(let i=0;i<64;i++){
+        const cell = boardEl.children[i];
+        if(!cell) continue;
+        if(!myColor || !isPlayerTurn) cell.classList.add('disabled'); else cell.classList.remove('disabled');
+      }
+    }
+
+    function onCellClick(r,c){
+      if(!gameState || gameState.status !== 'playing'){ alert('対戦中ではありません'); return; }
+      if(!myColor){ alert('観戦中です。'); return; }
+      if(gameState.turn !== myColor){ alert('あなたの手番ではありません'); return; }
+      const legal = (gameState.legalMoves || []).some(([rr,cc]) => rr===r && cc===c);
+      if(!legal) return;
+      socket.emit('makeMove', { roomId: currentRoom, r, c, color: myColor });
+    }
+
+    joinGameBtn.addEventListener('click', () => {
+      if(!currentRoom) { alert('先に部屋を開いてください'); return; }
+      socket.emit('joinGame', { roomId: currentRoom, username: usernameInput.value.trim() || '匿名' });
+      joinGameBtn.disabled = true;
+      joinGameBtn.textContent = '参加リクエスト中';
+    });
+
+    socket.on('roomUpdate', ({ players, roomId }) => {
+      if(roomId === currentRoom) playersLabel.textContent = '参加者: ' + (players.join(', ') || '-');
+      fetchRooms();
+    });
+
+    socket.on('gameState', (g) => {
+      updateGameState(g);
+    });
+
+    function showResult(g){
+      overlay.style.display = 'flex';
+      overlay.innerHTML = '';
+      const card = document.createElement('div');
+      const me = usernameInput.value.trim() || '匿名';
+      let resultClass = 'lose', title = 'Lose...', sub = '残念でした';
+      if(g.winner === 0){
+        resultClass = 'win'; title = 'Draw'; sub = `引き分けです。黒 ${g.counts.black} - 白 ${g.counts.white}`;
+      } else {
+        const winnerName = (g.players && g.players[g.winner]) ? g.players[g.winner] : (g.winner===1 ? '黒' : '白');
+        if((g.winner === 1 && myColor === 1) || (g.winner === 2 && myColor === 2)){
+          resultClass = 'win'; title = 'Congratulation!'; sub = `勝利しました。${winnerName} が勝者です。`;
+        } else {
+          resultClass = 'lose'; title = 'Lose...'; sub = `敗北しました。勝者: ${winnerName}`;
+        }
+      }
+      card.className = `result-card ${resultClass}`;
+      card.innerHTML = `<div class="result-title">${title}</div><div class="result-sub">${sub}</div>`;
+      overlay.appendChild(card);
+      setTimeout(hideResult, 8000);
+    }
+    function hideResult(){ overlay.style.display = 'none'; overlay.innerHTML = ''; }
+
+    /* Initial load */
+    buildBoard();
+    loadMessages();
+    fetchRooms();
+
+    /* UI bindings */
+    sendBtn.addEventListener('click', postMessage);
+    messageInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); postMessage(); } });
+    clearBtn.addEventListener('click', clearAll);
+    toggleOthelloBtn.addEventListener('click', () => {
+      if(othelloPanel.style.display === 'none' || othelloPanel.style.display === ''){ othelloPanel.style.display = 'block'; document.getElementById('splitContainer').classList.add('split'); }
+      else { othelloPanel.style.display = 'none'; document.getElementById('splitContainer').classList.remove('split'); }
+    });
+
+    (async () => {
+      try{
+        const res = await fetch(BASE + '/api/admins');
+        if(res.ok) adminList = await res.json();
+      }catch(e){}
     })();
   </script>
 </body>

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -144,7 +143,6 @@
   </div>
 
   <div class="container">
-    <!-- Shorts dedicated area -->
     <div id="shortsSection" class="shorts-section" style="display:none;">
       <div class="shorts-header">
         <div class="shorts-title">ショート動画</div>
@@ -272,9 +270,19 @@
           const MIN_ITEMS = 12; // 期待する最低表示数
           if (items.length < MIN_ITEMS) {
             // Collect other categories from chips
-            const chips = Array.from(document.querySelectorAll('.chip'))
+            let chips = Array.from(document.querySelectorAll('.chip'))
               .map(c => c.dataset.q)
               .filter(q => q && q !== query);
+
+            // 【追加部分】「すべて」の時、ニュースとテクノロジーが補填される確率を下げ、ゲームが優先的に表示されるようにする
+            if (query === 'trending') {
+              const rand = Math.random();
+              if (rand < 0.4) {
+                chips = chips.filter(c => c !== 'ニュース ライブ');
+              } else if (rand < 0.8) {
+                chips = chips.filter(c => c !== '最新テクノロジー');
+              }
+            }
 
             // Shuffle categories to get varied content
             shuffleArray(chips);

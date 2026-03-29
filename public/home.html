@@ -136,8 +136,8 @@
   <div class="chips-bar">
     <div class="chip active" data-q="trending">すべて</div>
     <div class="chip" data-q="Music">音楽</div>
-    <div class="chip" data-q="ゲーム実況">ゲーム</div>
-    <div class="chip" data-q="ニュース ライブ">ニュース</div>
+    <div class="chip" data-q="ゲーム実況">ゲーム実況</div>
+    <div class="chip" data-q="ゲーム">ゲーム</div>
     <div class="chip" data-q="エンタメ">エンタメ</div>
     <div class="chip" data-q="最新テクノロジー">テック</div>
   </div>
@@ -270,19 +270,9 @@
           const MIN_ITEMS = 12; // 期待する最低表示数
           if (items.length < MIN_ITEMS) {
             // Collect other categories from chips
-            let chips = Array.from(document.querySelectorAll('.chip'))
+            const chips = Array.from(document.querySelectorAll('.chip'))
               .map(c => c.dataset.q)
               .filter(q => q && q !== query);
-
-            // 【追加部分】「すべて」の時、ニュースとテクノロジーが補填される確率を下げ、ゲームが優先的に表示されるようにする
-            if (query === 'trending') {
-              const rand = Math.random();
-              if (rand < 0.4) {
-                chips = chips.filter(c => c !== 'ニュース ライブ');
-              } else if (rand < 0.8) {
-                chips = chips.filter(c => c !== '最新テクノロジー');
-              }
-            }
 
             // Shuffle categories to get varied content
             shuffleArray(chips);

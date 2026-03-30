@@ -989,6 +989,11 @@ app.get("/youtube-pro", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "min-tube-pro.html"));
 });
 
+app.get("/min-img.png", (req, res) => {
+  const filePath = path.join(__dirname, "img", "min-tube-pro.png");
+  res.sendFile(filePath);
+});
+
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, "public", "error.html")));
 app.use((err, req, res, next) => {
   res.status(500).sendFile(path.join(__dirname, "public", "error.html"));

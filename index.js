@@ -998,6 +998,14 @@ app.get("/helios", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "proxy/helios.html"));
 });
 
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "chat/chat.html"));
+});
+
+app.get("/nautilus-os", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "proxy/NautilusOS.html"));
+});
+
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, "public", "error.html")));
 app.use((err, req, res, next) => {
   res.status(500).sendFile(path.join(__dirname, "public", "error.html"));

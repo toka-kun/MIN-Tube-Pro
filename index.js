@@ -985,7 +985,9 @@ frame.addEventListener('click', ()=> {
 </html>`);
 });
 
-
+app.get("youtube-pro", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "min-tube-pro.html"));
+});
 
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, "public", "error.html")));
 app.use((err, req, res, next) => {

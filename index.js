@@ -706,12 +706,19 @@ app.get('/scratch-edu/:id', async (req, res) => {
 });
 
 
-app.get('/kahoot-edu/:id', (req, res) => {
+app.get('/kahoot-edu/:id', async (req, res) => {
   const id = req.params.id;
-  const url = `https://www.youtubeeducation.com/embed/${id}?autoplay=1&amp;mute=0&amp;controls=1&amp;start=0&amp;origin=https%3A%2F%2Fcreate.kahoot.it&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;iv_load_policy=3&amp;modestbranding=1&amp;fs=1&amp;cc_load_policy=0&amp;enablejsapi=1&amp;widgetid=1&amp;forigin=https%3A%2F%2Fcreate.kahoot.it%2Flearner%2Fcb8cb5ae-d835-4c4a-bc2d-9cc78519d646%2Fcourse%2F6fba06e3-1f76-47a8-9a4a-53c53eb86286%2F0&amp;aoriginsup=1&amp;vf=6&amp;embed_config=%7B%22enc%22%3A%22AXH1ezlhgHEmwog95ozjlKnxiKfG1CdBaqMrUvsJ9N4Nq3JwTZQipoCKHhbuqulfwKUQMVszf0myTUs30IpoNmaQBAF3uqqKhk3qnpjNVCzgKVMVkaQxYNhOGG7kxkEIFPqiKmtAdB8olrPnh_Cv1Z6ftDpPkwGJ2Q%3D%3D%22%2C%22hideTitle%22%3Atrue%7D`;
+
+  const paramUrl = 'https://raw.githubusercontent.com/woolisbest-4520/about-youtube/refs/heads/main/edu/parameter.txt';
+  const response = await fetch(paramUrl);
+  const params = await response.text(); 
+
+  const url = `https://www.youtubeeducation.com/embed/${id}${params}`;
+
   res.set('Content-Type', 'text/plain; charset=utf-8');
   res.send(url);
 });
+
 
 app.get('/nocookie/:id', (req, res) => {
   const id = req.params.id;

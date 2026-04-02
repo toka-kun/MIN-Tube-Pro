@@ -1,4 +1,4 @@
-#ver1.0.2
+# ver1.0.2
 変更点
 
 siawaseok 様の API と MIN-Tube2 の API を
@@ -10,7 +10,7 @@ Invidious 依存を完全に排除した堅牢な設計に進化
 API 障害に強く、動画メタデータ取得の成功率が大幅に向上
 
 
-#ver1.0.1
+# ver1.0.1
 変更点
 
 YouTubeEducation の埋め込みパラメータを

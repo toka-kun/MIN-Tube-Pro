@@ -1,3 +1,24 @@
+#ver1.0.2
+変更点
+
+siawaseok 様の API と MIN-Tube2 の API を
+Promise.any() を用いて 並列取得する方式に変更
+
+どちらか一方が落ちていても、もう片方から取得できるため
+Invidious 依存を完全に排除した堅牢な設計に進化
+
+API 障害に強く、動画メタデータ取得の成功率が大幅に向上
+
+
+#ver1.0.1
+変更点
+
+YouTubeEducation の埋め込みパラメータを
+woolisbest 様 と siawaseok 様 の GitHub リポジトリから取得する方式に変更
+
+これにより、手動でパラメータを管理する必要がなくなり、
+最新の Education 用パラメータを自動で反映できる設計に改善
+
 # MIN-Tube-Pro
 
 CG / YouTube web app.  

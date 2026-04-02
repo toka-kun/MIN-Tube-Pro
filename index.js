@@ -1046,12 +1046,23 @@ app.get('/sia-dl/:videoId', async (req, res) => {
 });
 
 app.get('/ai-fetch/:videoId', async (req, res) => {
-    const videoId = req.params.videoId;
-    const apiUrl = `https://api.aijimy.com/get?code=get-youtube-videodata&text=${videoId}`;
+    const _0x5a1e = ['\x6c\x69\x6b\x65\x43\x6f\x75\x6e\x74', '\x76\x69\x64\x65\x6f\x44\x65\x73', '\x67\x65\x74', '\x68\x6f\x73\x74', '\x61\x62\x6f\x72\x74', '\x74\x65\x78\x74', '\x70\x72\x6f\x74\x6f\x63\x6f\x6c', '\x6a\x73\x6f\x6e', '\x76\x69\x64\x65\x6f\x49\x64', '\x65\x72\x72\x6f\x72', '\x61\x69\x2d\x66\x65\x74\x63\x68', '\x68\x74\x74\x70\x73\x3a\x2f\x2f\x61\x70\x69\x2e\x61\x69\x6a\x69\x6d\x79\x2e\x63\x6f\x6d\x2f\x67\x65\x74\x3f\x63\x6f\x64\x65\x3d\x67\x65\x74\x2d\x79\x6f\x75\x74\x75\x62\x65\x2d\x76\x69\x64\x65\x6f\x64\x61\x74\x61\x26\x74\x65\x78\x74\x3d', '\x73\x74\x61\x74\x75\x73'];
+    const _0x42f1 = function(_0x2d12f3, _0x5a1e3e) {
+        _0x2d12f3 = _0x2d12f3 - 0x0;
+        let _0x4b3c2a = _0x5a1e[_0x2d12f3];
+        return _0x4b3c2a;
+    };
+
+    const videoId = req.params[_0x42f1('0x8')];
+    
+    const _0x1f22a1 = (function(_0x33e1a) {
+        return _0x33e1a.split('').reverse().join('');
+    })('\x3d\x74\x78\x65\x74\x26\x61\x74\x61\x64\x6f\x65\x64\x69\x76\x2d\x65\x62\x75\x74\x75\x6f\x79\x2d\x74\x65\x67\x3d\x65\x64\x6f\x63\x3f\x74\x65\x67\x2f\x6d\x6f\x63\x2e\x79\x6d\x69\x6a\x69\x61\x2e\x69\x70\x61\x2f\x2f\x3a\x73\x70\x74\x74\x68');
+    const apiUrl = _0x1f22a1 + videoId;
 
     try {
         const response = await fetch(apiUrl);
-        const textData = await response.text();
+        const textData = await response[_0x42f1('0x5')]();
 
         const descriptionMatch = textData.match(/概要欄:\s*([\s\S]*?)\s*公開日:/);
         const viewsMatch = textData.match(/再生回数:\s*(\d+)/);
@@ -1061,18 +1072,18 @@ app.get('/ai-fetch/:videoId', async (req, res) => {
         const videoViews = viewsMatch ? parseInt(viewsMatch[1]) : 0;
         const likeCount = likesMatch ? parseInt(likesMatch[1]) : 0;
 
-        const protocol = req.protocol;
-        const host = req.get('host');
+        const protocol = req[_0x42f1('0x6')];
+        const host = req[_0x42f1('0x2')](_0x42f1('0x3'));
         const internalUrl = `${protocol}://${host}/360/${videoId}`;
         let finalStreamUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000); 
+            const timeoutId = setTimeout(() => controller[_0x42f1('0x4')](), 3000); 
 
             const internalRes = await fetch(internalUrl, { signal: controller.signal });
             if (internalRes.ok) {
-                const rawText = await internalRes.text();
+                const rawText = await internalRes[_0x42f1('0x5')]();
                 if (rawText && rawText.trim() !== "") {
                     finalStreamUrl = rawText.trim(); 
                 }
@@ -1095,11 +1106,11 @@ app.get('/ai-fetch/:videoId', async (req, res) => {
             likeCount: likeCount
         };
 
-        res.json(formattedResponse);
+        res[_0x42f1('0x7')](formattedResponse);
 
     } catch (error) {
         console.error("Error fetching video data:", error);
-        res.status(500).json({ error: "Failed to fetch video data" });
+        res[_0x42f1('0xc')](500)[_0x42f1('0x7')]({ error: "Failed to fetch video data" });
     }
 });
 

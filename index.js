@@ -217,6 +217,15 @@ app.get("/video/:id", async (req, res, next) => {
 
 
         successfulApi = apiBase;
+
+        try {
+          const cRes = await fetchWithTimeout(`${apiBase}/api/comments/${videoId}`, {}, 3000);
+          if (cRes.ok) {
+            commentsData = await cRes.json();
+          }
+        } catch (e) {
+        }
+
         break;
 
       } catch (e) {
@@ -227,6 +236,12 @@ app.get("/video/:id", async (req, res, next) => {
             if (rapidData.stream_url) {
               videoData = rapidData;
               successfulApi = apiBase; 
+              try {
+                const cRes = await fetchWithTimeout(`${apiBase}/api/comments/${videoId}`, {}, 3000);
+                if (cRes.ok) {
+                  commentsData = await cRes.json();
+                }
+              } catch (e) {}
               break; 
             }
           }
@@ -239,12 +254,13 @@ app.get("/video/:id", async (req, res, next) => {
       videoData = { videoTitle: "再生できない動画", stream_url: "youtube-nocookie" };
     }
 
-    if (successfulApi) {
-      try {
-        const cRes = await fetchWithTimeout(`${successfulApi}/api/comments/${videoId}`, {}, 3000);
-        if (cRes.ok) commentsData = await cRes.json();
-      } catch (e) {}
-    }
+    res.json({ video: videoData, comments: commentsData });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
 
     const isShortForm = videoData.videoTitle.includes('#');
 

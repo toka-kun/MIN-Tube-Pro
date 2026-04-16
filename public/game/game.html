@@ -214,7 +214,7 @@
     card.setAttribute('role', 'button');
     card.setAttribute('tabindex', '0');
     card.dataset.genre = g.genre;
-    card.dataset.href = `/game/play.html?game=${g.key}`;
+    card.dataset.href = `play.html?game=${g.key}`;
     card.setAttribute('aria-label', `${g.name} — プレイする`);
 
     card.innerHTML = `
@@ -278,7 +278,7 @@
 
     let games;
     try {
-      const res = await fetch('/games.json');
+      const res = await fetch('games.json');
       if (!res.ok) throw new Error(res.statusText);
       games = await res.json();
     } catch (err) {

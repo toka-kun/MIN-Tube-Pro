@@ -1287,7 +1287,9 @@ app.get("/games.json", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "game/game.json"));
 });
 
-
+app.get("/ep", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "proxy/Easyproxy.html"));
+});
 
 // --- チャンネル動画API ---
 app.get("/api/channel", async (req, res) => {

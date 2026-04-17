@@ -1255,6 +1255,10 @@ app.get("/cts", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "app/cantsee.html"));
 });
 
+app.get("/urls", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "app/public-url.html"));
+});
+
 // --- チャンネル動画API ---
 app.get("/api/channel", async (req, res) => {
   const channelName = req.query.name || req.query.id;

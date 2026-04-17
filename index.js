@@ -1330,11 +1330,10 @@ app.get('/api/inv/channel/:name', async (req, res) => {
   }
 });
 
-// --- チャンネルページ ---
 app.get("/channel/:channelName", (req, res) => {
   const channelName = decodeURIComponent(req.params.channelName);
   const initial = channelName.charAt(0).toUpperCase();
-  // チャンネルごとにアバター背景色を決定（固定色）
+  // チャンネルごとにアバター背景色を決定（固定色・フォールバック用）
   const colors = ['#ff0000','#ff6d00','#ffd600','#00c853','#00b0ff','#651fff','#d500f9','#f50057'];
   const colorIndex = channelName.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
   const avatarBg = colors[colorIndex];
@@ -1401,18 +1400,15 @@ app.get("/channel/:channelName", (req, res) => {
       max-width:1284px; margin:0 auto; padding:0 24px;
     }
     .channel-header {
-      display:flex; align-items:flex-end; gap:24px;
-      padding:0 0 16px;
-      transform:translateY(-28px);
+      display:flex; align-items:flex-start; gap:24px;
+      padding:16px 0;
     }
     .channel-avatar {
-      width:88px; height:88px; border-radius:50%;
+      width:160px; height:160px; border-radius:50%;
       background:var(--avatar-bg);
       display:flex; align-items:center; justify-content:center;
-      font-size:36px; font-weight:700; color:#fff;
-      border:4px solid var(--bg); flex-shrink:0;
-      overflow:hidden; position:relative;
-      box-shadow:0 2px 16px rgba(0,0,0,0.6);
+      font-size:64px; font-weight:700; color:#fff;
+      flex-shrink:0; overflow:hidden; position:relative;
     }
     .channel-avatar img {
       width:100%; height:100%; object-fit:cover; display:none;
@@ -1421,29 +1417,36 @@ app.get("/channel/:channelName", (req, res) => {
     .channel-avatar img.loaded { display:block; }
     .avatar-initial { position:relative; z-index:1; }
 
-    .channel-info { flex:1; min-width:0; padding-bottom:4px; }
+    .channel-info { flex:1; min-width:0; padding-top:8px; }
+    .channel-title-container { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
     .channel-title {
-      font-size:24px; font-weight:700; line-height:1.2;
-      margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      font-size:36px; font-weight:700; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
-    .channel-handle {
-      font-size:13px; color:var(--text-sub); margin-bottom:4px;
+    .verified-badge {
+      fill: var(--text-sub); width: 14px; height: 14px; display:none; margin-top: 4px;
     }
-    .channel-stats {
-      font-size:13px; color:var(--text-sub);
+    .verified-badge.show { display: block; }
+    
+    .channel-handle-stats {
+      font-size:14px; color:var(--text-sub); margin-bottom:12px;
       display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     }
-    .channel-stats-dot { color:var(--text-sec); }
+    .channel-description {
+      font-size:14px; color:var(--text-sub);
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden; margin-bottom:16px; line-height:1.4; max-width: 600px;
+    }
 
-    .channel-actions { display:flex; align-items:center; gap:8px; padding-bottom:4px; flex-shrink:0; }
+    .channel-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; margin-top: 12px; }
     .btn-subscribe {
       background:var(--text); color:var(--bg);
       border:none; border-radius:20px;
-      padding:10px 16px; font-size:14px; font-weight:500;
+      padding:10px 18px; font-size:14px; font-weight:500;
       cursor:pointer; transition:background .15s, opacity .15s;
       font-family:'Roboto',Arial,sans-serif; white-space:nowrap;
     }
-    .btn-subscribe:hover { opacity:0.85; }
+    .btn-subscribe:hover { opacity:0.9; }
     .btn-subscribe.subscribed {
       background:var(--card); color:var(--text);
     }
@@ -1462,7 +1465,7 @@ app.get("/channel/:channelName", (req, res) => {
     .channel-tabs-wrap {
       max-width:1284px; margin:0 auto; padding:0 24px;
       border-bottom:1px solid var(--border);
-      margin-top:-28px;
+      margin-top:0px;
     }
     .channel-tabs { display:flex; gap:0; overflow-x:auto; scrollbar-width:none; }
     .channel-tabs::-webkit-scrollbar { display:none; }
@@ -1472,7 +1475,7 @@ app.get("/channel/:channelName", (req, res) => {
       transition:color .15s, border-color .15s; white-space:nowrap;
       letter-spacing:0.3px;
     }
-    .tab:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+    .tab:hover { color:var(--text); }
     .tab.active { color:var(--text); border-bottom-color:var(--text); }
 
     /* ===== CONTENT ===== */
@@ -1483,23 +1486,15 @@ app.get("/channel/:channelName", (req, res) => {
       gap:16px 16px; row-gap:32px;
     }
     .video-card { text-decoration:none; color:inherit; display:block; cursor:pointer; }
-    .thumb { aspect-ratio:16/9; border-radius:10px; overflow:hidden; background:#1a1a1a; position:relative; }
-    .thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:border-radius .2s; }
-    .video-card:hover .thumb img { border-radius:0; }
+    .thumb { aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#1a1a1a; position:relative; }
+    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
     .duration-badge {
       position:absolute; bottom:6px; right:6px;
       background:rgba(0,0,0,0.85); color:#fff;
       font-size:12px; font-weight:700; padding:2px 5px;
-      border-radius:4px; letter-spacing:0.3px;
+      border-radius:4px;
     }
-    .video-card-meta { margin-top:10px; display:flex; gap:10px; align-items:flex-start; }
-    .card-avatar {
-      width:36px; height:36px; border-radius:50%;
-      background:var(--avatar-bg);
-      display:flex; align-items:center; justify-content:center;
-      font-size:14px; font-weight:700; color:#fff;
-      flex-shrink:0;
-    }
+    .video-card-meta { margin-top:12px; display:flex; gap:0px; align-items:flex-start; }
     .card-info { flex:1; min-width:0; }
     .video-title {
       font-size:14px; font-weight:500; line-height:1.4;
@@ -1526,20 +1521,13 @@ app.get("/channel/:channelName", (req, res) => {
     /* ===== RESPONSIVE ===== */
     @media (max-width:768px) {
       .channel-banner { height:110px; }
-      .channel-avatar { width:72px; height:72px; font-size:28px; }
-      .channel-title { font-size:18px; }
-      .channel-header { gap:16px; transform:translateY(-24px); }
-      .channel-tabs-wrap { margin-top:-24px; }
-      .channel-header-wrap { padding:0 16px; }
-      .channel-tabs-wrap { padding:0 16px; }
-      .content { padding:0 12px; }
+      .channel-header { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+      .channel-avatar { width:80px; height:80px; font-size:32px; }
+      .channel-title { font-size:24px; }
+      .channel-handle-stats { justify-content: center; }
+      .channel-description { display: none; }
+      .channel-title-container { justify-content: center; }
       .video-grid { grid-template-columns:repeat(2,1fr); gap:10px; row-gap:24px; }
-      .btn-subscribe { padding:8px 14px; font-size:13px; }
-    }
-    @media (max-width:480px) {
-      .channel-title { font-size:16px; }
-      .channel-actions { gap:6px; }
-      .video-grid { gap:8px; row-gap:20px; }
     }
   </style>
 </head>
@@ -1568,19 +1556,24 @@ app.get("/channel/:channelName", (req, res) => {
       <span class="avatar-initial" id="avatarInitial">${initial}</span>
     </div>
     <div class="channel-info">
-      <div class="channel-title" id="channelTitle">${channelName}</div>
-      <div class="channel-handle" id="channelHandle">@${channelName.toLowerCase().replace(/\s+/g, '')}</div>
-      <div class="channel-stats">
-        <span id="subCount">読み込み中...</span>
-        <span class="channel-stats-dot" id="statsDot" style="display:none">•</span>
-        <span id="videoCount" style="display:none"></span>
+      <div class="channel-title-container">
+        <div class="channel-title" id="channelTitle">${channelName}</div>
+        <svg class="verified-badge" id="verifiedBadge" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 17l-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9z"/></svg>
       </div>
-    </div>
-    <div class="channel-actions">
-      <button class="btn-subscribe" id="subscribeBtn" onclick="toggleSubscribe()">チャンネル登録</button>
-      <button class="btn-notify" id="notifyBtn" aria-label="通知">
-        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-      </button>
+      <div class="channel-handle-stats">
+        <span id="channelHandle">@${channelName.toLowerCase().replace(/\s+/g, '')}</span>
+        <span class="channel-stats-dot">•</span>
+        <span id="subCount">読み込み中...</span>
+        <span class="channel-stats-dot">•</span>
+        <span id="videoCountDisplay">動画 0 本</span>
+      </div>
+      <div class="channel-description" id="channelDescription"></div>
+      <div class="channel-actions">
+        <button class="btn-subscribe" id="subscribeBtn" onclick="toggleSubscribe()">チャンネル登録</button>
+        <button class="btn-notify" id="notifyBtn" aria-label="通知">
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1644,43 +1637,42 @@ app.get("/channel/:channelName", (req, res) => {
     return n.toLocaleString() + '回視聴';
   }
 
-  // 視聴数からチャンネル登録者数を推定
-  function estimateSubscribers(videos) {
-    if (!videos || videos.length === 0) return null;
-    let totalViews = 0;
-    let count = 0;
-    for (const v of videos) {
-      if (!v.viewCountText) continue;
-      const n = parseInt(String(v.viewCountText).replace(/[^0-9]/g, ''));
-      if (!isNaN(n) && n > 0) { totalViews += n; count++; }
-    }
-    if (count === 0) return null;
-    const avgViews = totalViews / count;
-    // 平均再生数の約1〜5%が登録者数と仮定（チャンネルの規模に応じて調整）
-    const est = Math.round(avgViews * (0.01 + Math.random() * 0.04));
-    return est;
-  }
-
   function formatSubscribers(n) {
-    if (!n || n <= 0) return null;
-    if (n >= 100000000) return (n/100000000).toFixed(1) + '億人';
-    if (n >= 10000000) return Math.floor(n/10000000) + '千万人';
-    if (n >= 10000) return Math.floor(n/10000) + '万人';
-    if (n >= 1000) return (n/1000).toFixed(1) + '千人';
-    return n.toLocaleString() + '人';
+    if (!n) return 'チャンネル';
+    if (typeof n === 'string' && n.includes('人')) return n;
+    const num = parseInt(String(n).replace(/[^0-9]/g, ''));
+    if (isNaN(num)) return n;
+    if (num >= 100000000) return (num/100000000).toFixed(1) + '億人';
+    if (num >= 10000) return Math.floor(num/10000) + '万人';
+    if (num >= 1000) return (num/1000).toFixed(1) + '千人';
+    return num.toLocaleString() + '人';
   }
 
-  // チャンネルアイコン画像をYouTube APIから試みる（利用不可の場合はイニシャル）
-  function tryLoadChannelAvatar(channelId) {
-    if (!channelId) return;
-    // YTのチャンネルアバターURLパターンを試みる
-    const tryUrls = [
-      \`https://yt3.ggpht.com/ytc/\${channelId}=s88-c-k-c0x00ffffff-no-rj\`,
-    ];
-    const img = document.getElementById('channelAvatarImg');
-    img.onload = function() { img.classList.add('loaded'); document.getElementById('avatarInitial').style.display='none'; };
-    img.onerror = function() { /* イニシャル表示のまま */ };
-    img.src = tryUrls[0];
+  // チャンネル情報を反映
+  function updateChannelMetadata(data) {
+    if (!data) return;
+    
+    // アバター
+    if (data.authorThumbnails && data.authorThumbnails.length > 0) {
+      const bestThumb = data.authorThumbnails.sort((a,b) => b.width - a.width)[0];
+      const img = document.getElementById('channelAvatarImg');
+      img.onload = () => {
+        img.classList.add('loaded');
+        document.getElementById('avatarInitial').style.display = 'none';
+      };
+      img.src = bestThumb.url.startsWith('//') ? 'https:' + bestThumb.url : bestThumb.url;
+    }
+
+    // 基本情報
+    if (data.author) document.getElementById('channelTitle').textContent = data.author;
+    if (data.channelHandle) document.getElementById('channelHandle').textContent = data.channelHandle;
+    if (data.subCount) {
+      const subText = typeof data.subCount === 'number' ? formatSubscribers(data.subCount) : data.subCount;
+      document.getElementById('subCount').textContent = subText + ' のチャンネル登録者';
+    }
+    if (data.description) document.getElementById('channelDescription').textContent = data.description;
+    if (data.authorVerified) document.getElementById('verifiedBadge').classList.add('show');
+    if (data.videoCount !== undefined) document.getElementById('videoCountDisplay').textContent = '動画 ' + data.videoCount + ' 本';
   }
 
   function renderVideos(videos) {
@@ -1693,10 +1685,9 @@ app.get("/channel/:channelName", (req, res) => {
     const html = videos.map(v => \`
       <a href="/video/\${v.id}" class="video-card">
         <div class="thumb">
-          <img src="https://i.ytimg.com/vi/\${v.id}/mqdefault.jpg" loading="lazy" alt="\${(v.title||'').replace(/"/g,'&quot;')}">
+          <img src="https://i.ytimg.com/vi/\${v.id}/mqdefault.jpg" loading="lazy" alt="\${(v.title||'').replace(/"/g,'"')}">
         </div>
         <div class="video-card-meta">
-          <div class="card-avatar">\${AVATAR_INITIAL}</div>
           <div class="card-info">
             <div class="video-title">\${v.title || ''}</div>
             <div class="video-sub">\${formatViews(v.viewCountText) || ''}\${v.publishedTimeText ? ' • '+v.publishedTimeText : ''}</div>
@@ -1707,27 +1698,33 @@ app.get("/channel/:channelName", (req, res) => {
 
     grid.insertAdjacentHTML('beforeend', html);
     totalLoaded += videos.length;
-
-    // 初回ロード時にチャンネル情報を更新
-    if (totalLoaded <= videos.length && videos[0]) {
-      const first = videos[0];
-      const realName = first.channelTitle || CHANNEL_NAME;
-      document.getElementById('channelTitle').textContent = realName;
-      document.getElementById('channelHandle').textContent = '@' + realName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9\u3000-\u9fff]/g, '');
-
-      // 登録者数の推定表示
-      const estSubs = estimateSubscribers(videos);
-      const subFmt = estSubs ? formatSubscribers(estSubs) + ' 人のチャンネル登録者' : 'チャンネル';
-      document.getElementById('subCount').textContent = subFmt;
-      document.getElementById('statsDot').style.display = '';
-      document.getElementById('videoCount').style.display = '';
-      document.getElementById('videoCount').textContent = \`動画 \${totalLoaded}件以上\`;
-
-      // チャンネルIDを推定して試みる（first.channelIdがあれば）
-      if (first.channelId) tryLoadChannelAvatar(first.channelId);
-    } else {
-      document.getElementById('videoCount').textContent = \`動画 \${totalLoaded}件以上\`;
+    
+    // フォールバックAPI使用時に動画数だけ更新
+    if (totalLoaded > 0 && document.getElementById('videoCountDisplay').textContent.includes('0')) {
+        document.getElementById('videoCountDisplay').textContent = '動画 ' + totalLoaded + ' 本以上';
     }
+  }
+
+  async function fetchChannelInfo() {
+    // 3秒でタイムアウトするfetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    try {
+      const res = await fetch(\`/api/inv/channel/\${encodeURIComponent(CHANNEL_NAME)}\`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      const data = await res.json();
+      
+
+      const channelData = Array.isArray(data) ? data.find(c => c.type === 'channel') || data[0] : data;
+      if (channelData) {
+        updateChannelMetadata(channelData);
+        return true;
+      }
+    } catch (e) {
+      console.warn('API /api/inv/channel failed or timed out, falling back.', e);
+    }
+    return false;
   }
 
   async function loadVideos(page) {
@@ -1735,6 +1732,7 @@ app.get("/channel/:channelName", (req, res) => {
     isLoading = true;
     document.getElementById('loading').style.display = 'flex';
     document.getElementById('loadMoreBtn').style.display = 'none';
+    
     try {
       const res = await fetch(\`/api/channel?name=\${encodeURIComponent(CHANNEL_NAME)}&page=\${page}\`);
       const data = await res.json();
@@ -1744,7 +1742,9 @@ app.get("/channel/:channelName", (req, res) => {
         document.getElementById('loadMoreBtn').style.display = 'block';
       }
     } catch (e) {
-      document.getElementById('videoGrid').innerHTML = '<div class="empty">読み込みに失敗しました</div>';
+      if (totalLoaded === 0) {
+        document.getElementById('videoGrid').innerHTML = '<div class="empty">動画の読み込みに失敗しました</div>';
+      }
     } finally {
       document.getElementById('loading').style.display = 'none';
       isLoading = false;
@@ -1753,7 +1753,15 @@ app.get("/channel/:channelName", (req, res) => {
 
   function loadMore() { loadVideos(currentPage); }
 
-  loadVideos(0);
+  // 初期化処理
+  async function init() {
+    // まずリッチなチャンネル情報を取得（失敗しても動画読み込みへ進む）
+    await fetchChannelInfo();
+    // 動画リストを読み込み
+    loadVideos(0);
+  }
+
+  init();
 </script>
 </body>
 </html>`;

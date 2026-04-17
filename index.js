@@ -1305,6 +1305,31 @@ app.get("/api/channel", async (req, res) => {
   }
 });
 
+app.get('/api/inv/channel/:name', async (req, res) => {
+  const channelName = req.params.name;
+
+  const url = `https://inv.vern.cc/api/v1/search?q=${encodeURIComponent(
+    channelName
+  )}&type=channel`;
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .json({ error: `Upstream error: ${response.statusText}` });
+    }
+
+    const data = await response.json();
+
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // --- チャンネルページ ---
 app.get("/channel/:channelName", (req, res) => {
   const channelName = decodeURIComponent(req.params.channelName);

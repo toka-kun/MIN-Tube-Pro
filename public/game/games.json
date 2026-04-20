@@ -238,9 +238,9 @@
   "status": "done"
 },
   {
-  "key": "1/2",
-  "name": "1/2 surviver",
-  "emoji": "2️⃣",
+  "key": "cat",
+  "name": "cat surviver",
+  "emoji": "🐈",
   "sub": "アクション · 1人プレイ",
   "file": "fun/Cat.html",
   "desc": "猫を操るアクションゲー‼︎",

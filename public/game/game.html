@@ -265,7 +265,7 @@
           <label class="sort-label" for="sortSelect">並び替え</label>
           <select id="sortSelect" aria-label="並び替え">
             <option value="default">デフォルト</option>
-            <option value="name-asc">名前 (A→Z)</option>
+            <option value="name-asc" selected>名前 (A→Z)</option> <!-- 初期選択を名前順に -->
             <option value="name-desc">名前 (Z→A)</option>
           </select>
         </div>
@@ -359,11 +359,20 @@
       const res = await fetch('games.json');
       if (!res.ok) throw new Error(res.statusText);
       allGames = await res.json();
+      
+      // 【追加】読み込み時に名前順（昇順）でソートする
+      allGames.sort((a, b) => a.name.localeCompare(b.name, 'ja', { numeric: true, sensitivity: 'base' }));
+
     } catch(err) {
       grid.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">読み込みエラー</div><div class="empty-sub">ゲームデータの読み込みに失敗しました。</div></div>';
       console.error('games.json エラー:', err);
       return;
     }
+
+    // ── フィルタリング・ソート・検索 ─────────────────
+    let activeGenre  = 'all';
+    let activeSearch = '';
+    let activeSort   = 'name-asc'; // 【変更】デフォルトを name-asc に
 
     // カード要素を生成してキャッシュ
     const cardEls = allGames.map(g => {
@@ -374,11 +383,6 @@
 
     // coming-soon プレースホルダー
     const placeholders = ['🎯','🚀'].map(e => { const el = createComingSoon(e); grid.appendChild(el); return el; });
-
-    // ── フィルタリング・ソート・検索 ─────────────────
-    let activeGenre  = 'all';
-    let activeSearch = '';
-    let activeSort   = 'default';
 
     function applyFilters() {
       const q = activeSearch.trim().toLowerCase();
@@ -419,7 +423,10 @@
       if (activeSort === 'default') return;
       els.sort((a,b) => {
         const na = a.g.name, nb = b.g.name;
-        return activeSort === 'name-asc' ? na.localeCompare(nb,'ja') : nb.localeCompare(na,'ja');
+        // 数値・アルファベット・日本語に対応した比較
+        return activeSort === 'name-asc' 
+          ? na.localeCompare(nb,'ja', { numeric: true }) 
+          : nb.localeCompare(na,'ja', { numeric: true });
       });
       els.forEach(({el}) => grid.insertBefore(el, grid.querySelector('.coming-soon') || null));
     }
@@ -429,9 +436,9 @@
     function resetFilters() {
       activeSearch = '';
       activeGenre  = 'all';
-      activeSort   = 'default';
+      activeSort   = 'name-asc'; // リセット時も名前順にする
       $('searchInput').value = '';
-      $('sortSelect').value  = 'default';
+      $('sortSelect').value  = 'name-asc';
       document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.genre==='all'));
       update();
     }

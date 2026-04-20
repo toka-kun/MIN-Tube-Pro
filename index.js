@@ -1342,6 +1342,10 @@ app.get("/urls", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "app/public-url.html"));
 });
 
+app.get("/own", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "proxy/own.html"));
+});
+
 app.get("/wista", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "wista.html"));
 });

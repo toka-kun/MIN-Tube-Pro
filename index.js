@@ -475,9 +475,20 @@ const shortsHtml = `
     <title>${videoData.videoTitle} - YouTube Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg-main: #0f0f0f; --bg-secondary: #272727; --bg-hover: #3f3f3f; --text-main: #f1f1f1; --text-sub: #aaaaaa; --yt-red: #ff0000; }
+        :root { 
+            --bg-main: #0f0f0f; 
+            --bg-secondary: #272727; 
+            --bg-hover: #3f3f3f; 
+            --text-main: #f1f1f1; 
+            --text-sub: #aaaaaa; 
+            --yt-red: #ff0000; 
+            --ai-gradient: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
+        }
+        * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-main); font-family: "Roboto", "Arial", sans-serif; overflow-x: hidden; }
-        .navbar { position: fixed; top: 0; width: 100%; height: 56px; background: var(--bg-main); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; box-sizing: border-box; z-index: 1000; border-bottom: 1px solid #222; }
+
+        /* ===== NAVBAR ===== */
+        .navbar { position: fixed; top: 0; width: 100%; height: 56px; background: var(--bg-main); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; border-bottom: 1px solid #222; }
         .nav-left { display: flex; align-items: center; gap: 16px; }
         .logo { display: flex; align-items: center; color: white; text-decoration: none; font-weight: bold; font-size: 18px; }
         .logo i { color: var(--yt-red); font-size: 24px; margin-right: 4px; }
@@ -485,14 +496,17 @@ const shortsHtml = `
         .search-bar { display: flex; width: 100%; background: #121212; border: 1px solid #303030; border-radius: 40px 0 0 40px; padding: 0 16px; }
         .search-bar input { width: 100%; background: transparent; border: none; color: white; height: 38px; font-size: 16px; outline: none; }
         .search-btn { background: #222; border: 1px solid #303030; border-left: none; border-radius: 0 40px 40px 0; width: 64px; height: 40px; color: white; cursor: pointer; }
+
+        /* ===== LAYOUT ===== */
         .container { margin-top: 56px; display: flex; justify-content: center; padding: 24px; gap: 24px; max-width: 1700px; margin-left: auto; margin-right: auto; }
-        .main-content { flex: 1; min-width: 0; position: relative; }
+        .main-content { flex: 1; min-width: 0; }
         .sidebar { width: 400px; flex-shrink: 0; }
+
+        /* ===== PLAYER ===== */
         .player-container { width: 100%; aspect-ratio: 16 / 9; background: black; border-radius: 12px; overflow: hidden; position: relative; z-index: 100; box-shadow: 0 4px 30px rgba(0,0,0,0.7); }
         .video-title { font-size: 20px; font-weight: bold; margin: 12px 0; line-height: 28px; }
-        .owner-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .owner-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
         .owner-info { display: flex; align-items: center; gap: 12px; }
-        .owner-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         .channel-name { font-weight: bold; font-size: 16px; }
         .btn-sub { background: white; color: black; border: none; padding: 0 16px; height: 36px; border-radius: 18px; font-weight: bold; cursor: pointer; }
         .action-btn { background: var(--bg-secondary); border: none; color: white; padding: 0 16px; height: 36px; border-radius: 18px; cursor: pointer; font-size: 14px; }
@@ -500,50 +514,280 @@ const shortsHtml = `
         .comment-item { display: flex; gap: 16px; margin-bottom: 20px; }
         .comment-avatar { width: 40px; height: 40px; border-radius: 50%; }
         .comment-author { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; }
+
+        /* ===== RECOMMENDATION ITEMS ===== */
         .rec-item { display: flex; gap: 8px; margin-bottom: 12px; cursor: pointer; text-decoration: none; color: inherit; }
-        .rec-thumb { width: 160px; height: 90px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #222; }
+        .rec-thumb { width: 160px; height: 90px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #222; position: relative; }
         .rec-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .rec-info { display: flex; flex-direction: column; justify-content: flex-start; }
+        .rec-info { display: flex; flex-direction: column; justify-content: flex-start; flex: 1; }
         .rec-title { font-size: 14px; font-weight: bold; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
         .rec-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-        .shorts-shelf-container { margin-top: 24px; border-top: 4px solid var(--bg-secondary); padding-top: 20px; margin-bottom: 24px; }
-        .shorts-shelf-title { display: flex; align-items: center; font-size: 18px; font-weight: bold; margin-bottom: 16px; color: white; }
-        .shorts-shelf-title svg { margin-right: 8px; width: 24px; height: 24px; }
-        .shorts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .short-card { text-decoration: none; color: inherit; display: block; }
-        .short-thumb { aspect-ratio: 9/16; border-radius: 8px; overflow: hidden; background: #222; }
-        .short-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .short-info { margin-top: 8px; }
-        .short-title { font-size: 14px; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .short-views { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
-        .server-dropdown-container { position: relative; display: inline-block; margin-left: 12px; }
-        .btn-server { background: var(--bg-secondary); color: var(--text-main); border: none; padding: 0 16px; height: 36px; border-radius: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: background 0.2s; }
-        .btn-server:hover { background: var(--bg-hover); }
-        .server-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 200; min-width: 220px; border: 1px solid #333; }
-        .server-menu.show { display: block; }
-        .server-option { padding: 12px 16px; cursor: pointer; font-size: 14px; transition: background 0.2s; display: flex; align-items: center; }
-        .server-option:hover { background: var(--bg-hover); }
-        .server-option.active { background: #333; border-left: 4px solid var(--yt-red); padding-left: 12px; }
-        .video-loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 150; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
-        .video-loading-overlay.active { opacity: 1; pointer-events: auto; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 50px; height: 50px; border-radius: 50%; border-top-color: var(--yt-red); animation: spin 1s ease-in-out infinite; margin-bottom: 16px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @media (max-width: 1000px) { .container { flex-direction: column; padding: 0; } .sidebar { width: 100%; padding: 16px; box-sizing: border-box; } .player-container { border-radius: 0; } .main-content { padding: 16px; } }
+
+        /* ===== VIDEO LOADING OVERLAY ===== */
+        .video-loading-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 200; }
+        .video-loading-overlay.active { display: flex; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== AI RECOMMENDATION CARD ===== */
+        .ai-rec-wrapper {
+            margin-bottom: 16px;
+            display: none;
+        }
+        .ai-rec-card {
+            background: linear-gradient(135deg, rgba(66,133,244,0.08), rgba(155,114,203,0.12), rgba(217,101,112,0.08));
+            border: 1px solid transparent;
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+        .ai-rec-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 1px;
+            background: var(--ai-gradient);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .ai-rec-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .ai-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .ai-badge-text {
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .ai-badge-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--ai-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .ai-close-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-sub);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .ai-close-btn:hover { color: white; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+        /* ===== GROQ LOADING ANIMATION ===== */
+        .groq-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+        }
+        .groq-loading-dots {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .groq-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: groq-pulse 1.4s ease-in-out infinite;
+        }
+        .groq-dot:nth-child(1) { background: #4285f4; animation-delay: 0s; }
+        .groq-dot:nth-child(2) { background: #9b72cb; animation-delay: 0.2s; }
+        .groq-dot:nth-child(3) { background: #d96570; animation-delay: 0.4s; }
+        .groq-dot:nth-child(4) { background: #4285f4; animation-delay: 0.6s; }
+        @keyframes groq-pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+        .groq-loading-text {
+            font-size: 12px;
+            color: var(--text-sub);
+            text-align: center;
+            line-height: 1.6;
+        }
+        .groq-loading-text span {
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+        .groq-wave {
+            width: 100%;
+            height: 3px;
+            background: #1a1a1a;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .groq-wave-bar {
+            position: absolute;
+            width: 60%;
+            height: 100%;
+            background: var(--ai-gradient);
+            border-radius: 2px;
+            animation: groq-wave-move 1.8s ease-in-out infinite;
+            filter: blur(1px);
+        }
+        @keyframes groq-wave-move {
+            0% { left: -60%; opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { left: 110%; opacity: 0.5; }
+        }
+
+        /* ===== AI RESULT CARD ===== */
+        .ai-result-link {
+            display: flex;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 12px;
+            padding: 8px;
+            margin: 0 -8px;
+            transition: background 0.2s;
+        }
+        .ai-result-link:hover { background: rgba(255,255,255,0.05); }
+        .ai-result-thumb {
+            width: 160px;
+            height: 90px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #222;
+            position: relative;
+        }
+        .ai-result-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .ai-result-badge {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: var(--ai-gradient);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            letter-spacing: 0.3px;
+        }
+        .ai-result-info { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
+        .ai-result-title { font-size: 14px; font-weight: 700; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
+        .ai-result-channel { font-size: 12px; color: var(--text-sub); }
+        .ai-personalized-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== AI JUMP BUTTON (right top) ===== */
+        #aiJumpBtn {
+            display: none;
+            position: fixed;
+            top: 65px;
+            right: 24px;
+            z-index: 999;
+            background: rgba(20,20,20,0.95);
+            color: white;
+            border: 1px solid rgba(155,114,203,0.4);
+            padding: 9px 18px;
+            border-radius: 22px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(155,114,203,0.2), 0 2px 8px rgba(0,0,0,0.4);
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+            backdrop-filter: blur(8px);
+        }
+        #aiJumpBtn:hover { transform: translateY(-2px); border-color: rgba(155,114,203,0.7); box-shadow: 0 6px 24px rgba(155,114,203,0.3), 0 2px 8px rgba(0,0,0,0.4); }
+        #aiJumpBtn .ai-btn-icon {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--ai-gradient);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; flex-shrink: 0;
+        }
+        #aiJumpBtn .ai-btn-close {
+            margin-left: 4px; font-size: 11px; color: rgba(255,255,255,0.4);
+            transition: color 0.2s; padding: 0 2px;
+        }
+        #aiJumpBtn .ai-btn-close:hover { color: white; }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 1000px) {
+            .container { flex-direction: column; padding: 0; }
+            .sidebar { width: 100%; padding: 16px; }
+            .player-container { border-radius: 0; }
+            .main-content { padding: 16px; }
+            #aiJumpBtn { top: 62px; right: 12px; font-size: 11px; padding: 7px 12px; }
+            .ai-result-thumb { width: 130px; height: 73px; }
+        }
     </style>
 </head>
 <body>
+
 <nav class="navbar">
     <div class="nav-left"><a href="/" class="logo"><i class="fab fa-youtube"></i>YouTube Pro</a></div>
-    <div class="nav-center"><form class="search-bar" action="/nothing/search"><input type="text" name="q" placeholder="検索"><button type="submit" class="search-btn"><i class="fas fa-search"></i></button></form></div>
+    <div class="nav-center">
+        <form class="search-bar" action="/nothing/search">
+            <input type="text" name="q" placeholder="検索">
+            <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
     <div style="width:100px;"></div>
 </nav>
+
+<!-- AI Jump Button (2回目以降) -->
+<button id="aiJumpBtn" onclick="handleAIJumpBtnClick(event)">
+    <span class="ai-btn-icon">✦</span>
+    AIのおすすめ
+    <span class="ai-btn-close" onclick="dismissAIJumpBtn(event)" title="閉じる">✕</span>
+</button>
 
 <div class="container">
     <div class="main-content">
         <div class="player-container">
-            <div id="playerWrapper" style="width:100%; height:100%;">
-                ${streamEmbedPlaceholder}
-            </div>
+            <div id="playerWrapper" style="width:100%; height:100%;">${streamEmbedPlaceholder}</div>
             <div id="videoLoadingOverlay" class="video-loading-overlay">
                 <div class="spinner"></div>
                 <div style="font-weight: bold; font-size: 16px;">動画サーバーに接続中...</div>
@@ -553,179 +797,374 @@ const shortsHtml = `
         <div class="owner-row">
             <div class="owner-info">
                 <a href="/channel/${encodeURIComponent(videoData.channelName)}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
-                  <img id="ownerAvatar" src="${videoData.channelImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(videoData.channelName||'C')}&background=random&color=fff&size=80&bold=true`}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(videoData.channelName||'C')}&background=555&color=fff&size=80&bold=true'">
-                  <div class="channel-name">${videoData.channelName}</div>
+                    <img id="ownerAvatar" src="${videoData.channelImage || 'https://ui-avatars.com/api/?name=C'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                    <div class="channel-name">${videoData.channelName}</div>
                 </a>
                 <button id="subBtn" class="btn-sub" onclick="toggleSubscribeVideo()">チャンネル登録</button>
-                <div class="server-dropdown-container">
-                    <button class="btn-server" onclick="toggleServerMenu()">
-                        <i class="fas fa-server"></i> 動画サーバー <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: 2px;"></i>
-                    </button>
-                    <div id="serverMenu" class="server-menu">
-                        <div class="server-option active" onclick="changeServer('googlevideo', '', event)">Googlevideo</div>
-                        <div class="server-option" onclick="changeServer('youtube-nocookie', '/nocookie/${videoId}', event)">Youtube-nocookie</div>
-                        <div class="server-option" onclick="changeServer('DL-Pro', '/360/${videoId}', event)">DL-Pro</div>
-                        <div class="server-option" onclick="changeServer('YoutubeEdu-Kahoot', '/kahoot-edu/${videoId}', event)">YoutubeEdu-Kahoot</div>
-                        <div class="server-option" onclick="changeServer('YoutubeEdu-Scratch', '/scratch-edu/${videoId}', event)">YoutubeEdu-Scratch</div>
-                        <div class="server-option" onclick="changeServer('Youtube-Pro', '/pro-stream/${videoId}', event)">Youtube-Pro</div>
-                    </div>
-                </div>
             </div>
-            <div style="display:flex; gap:8px;"><button class="action-btn">👍 ${videoData.likeCount || 0}</button><button class="action-btn">共有</button></div>
+            <div style="display:flex; gap:8px;">
+                <button class="action-btn">👍 ${videoData.likeCount || 0}</button>
+                <button class="action-btn">共有</button>
+            </div>
         </div>
         <div class="description-box"><b>${videoData.videoViews || '0'} 回視聴</b><br><br>${videoData.videoDes || ''}</div>
         <div class="comments-section">
             <h3>コメント ${commentsData.commentCount} 件</h3>
-            ${commentsData.comments.map(c => `<div class="comment-item"><img class="comment-avatar" src="${c.authorThumbnails?.[0]?.url || ''}"><div><span class="comment-author">${c.author}</span><div style="font-size:14px;">${c.content}</div></div></div>`).join('')}
+            ${commentsData.comments.map(c => \`<div class="comment-item"><img class="comment-avatar" src="\${c.authorThumbnails?.[0]?.url || ''}"><div><span class="comment-author">\${c.author}</span><div style="font-size:14px;">\${c.content}</div></div></div>\`).join('')}
         </div>
     </div>
+
     <div class="sidebar">
-        <div id="recommendations"></div>
-        <div id="shortsShelf" class="shorts-shelf-container" style="display:none;">
-            <div class="shorts-shelf-title">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red">
-                    <path d="M17.77,10.32l-1.2-.5L18,9.06a3.74,3.74,0,0,0-3.5-6.62L6,6.94a3.74,3.74,0,0,0,.23,6.74l1.2.49L6,14.93a3.75,3.75,0,0,0,3.5,6.63l8.5-4.5a3.74,3.74,0,0,0-.23-6.74Z"/>
-                    <polygon points="10 14.65 15 12 10 9.35 10 14.65" fill="#fff"/>
-                </svg>
-                Shorts
+        <!-- AI おすすめカード -->
+        <div id="aiRecWrapper" class="ai-rec-wrapper">
+            <div class="ai-rec-card">
+                <div class="ai-rec-header">
+                    <div class="ai-badge">
+                        <div class="ai-badge-icon">✦</div>
+                        <span class="ai-badge-text">Groq AI があなたにおすすめ</span>
+                    </div>
+                    <button class="ai-close-btn" onclick="dismissAIPermanently()" title="非表示にする">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="aiRecContent">
+                    <!-- ローディング or 結果がここに入る -->
+                </div>
             </div>
-            <div id="shortsGrid" class="shorts-grid"></div>
         </div>
+
+        <!-- 通常の関連動画 -->
+        <div id="recommendations"></div>
     </div>
 </div>
 
 <script>
-    function toggleServerMenu() { document.getElementById('serverMenu').classList.toggle('show'); }
-    window.addEventListener('click', function(e) { if (!e.target.closest('.server-dropdown-container')) { const menu = document.getElementById('serverMenu'); if (menu && menu.classList.contains('show')) menu.classList.remove('show'); } });
+(function() {
+    // ============================
+    // 定数
+    // ============================
+    const GROQ_API_KEY = "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";
+    const CURRENT_VIDEO_ID = "${videoId}";
+    const CURRENT_TITLE    = ${JSON.stringify(videoData.videoTitle)};
+    const CURRENT_CHANNEL  = ${JSON.stringify(videoData.channelName)};
 
-    // チャンネル登録機能
-    const VIDEO_CHANNEL = ${JSON.stringify(videoData.channelName || '')};
-    const SUB_KEY_VIDEO = 'subscribed_' + VIDEO_CHANNEL;
-    const subBtn = document.getElementById('subBtn');
-    function updateSubBtnUI() {
-      const isSub = localStorage.getItem(SUB_KEY_VIDEO) === 'true';
-      if (isSub) {
-        subBtn.textContent = '登録済み';
-        subBtn.style.background = '#272727';
-        subBtn.style.color = '#aaa';
-      } else {
-        subBtn.textContent = 'チャンネル登録';
-        subBtn.style.background = 'white';
-        subBtn.style.color = 'black';
-      }
-    }
-    function toggleSubscribeVideo() {
-      const isSub = localStorage.getItem(SUB_KEY_VIDEO) === 'true';
-      if (isSub) {
-        localStorage.removeItem(SUB_KEY_VIDEO);
-      } else {
-        localStorage.setItem(SUB_KEY_VIDEO, 'true');
-      }
-      updateSubBtnUI();
-    }
-    updateSubBtnUI();
+    const LS_HISTORY        = 'yt_pro_history';
+    const LS_AI_DISMISSED   = 'ai_rec_dismissed';   // 永久非表示フラグ
+    const LS_AI_FIRST_DONE  = 'ai_rec_first_done';  // 初回表示完了フラグ
 
-    async function changeServer(serverName, endpointPath, event) {
-        document.getElementById('serverMenu').classList.remove('show');
-        const options = document.querySelectorAll('.server-option');
-        options.forEach(opt => opt.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    let aiLoadInProgress = false;
+    let aiAlreadyLoaded  = false;
+    let aiVideoResult    = null;
 
-        const overlay = document.getElementById('videoLoadingOverlay');
-        overlay.classList.add('active');
-
+    // ============================
+    // 履歴管理
+    // ============================
+    function saveHistory() {
         try {
-            let newUrl = '';
-            // --- ロジックの条件分岐 ---
-            if (serverName === 'googlevideo') {
-                newUrl = "${videoData.stream_url}" === "youtube-nocookie" ? \`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1\` : "${videoData.stream_url}";
-            } else if (serverName === 'Youtube-Pro') {
-                // Youtube-ProはエンドポイントURLをそのまま使用
-                newUrl = endpointPath;
-            } else {
-                // それ以外はサーバーから生のURLを取得
-                const res = await fetch(endpointPath);
-                if (!res.ok) throw new Error("サーバーエラー");
-                newUrl = await res.text();
-            }
-
-            const playerContainer = document.getElementById('playerWrapper');
-            // Kahoot, Scratch, Youtube-Pro, およびnocookieは強制的にiframe
-            const forceIframe = ['YoutubeEdu-Kahoot', 'YoutubeEdu-Scratch', 'Youtube-Pro', 'youtube-nocookie'].includes(serverName);
-            const isIframe = forceIframe || newUrl.includes('embed');
-
-            let playerHtml = '';
-            if (isIframe) {
-                playerHtml = \`<iframe id="mainIframe" src="\${newUrl}" frameborder="0" allowfullscreen style="width:100%; height:100%; position:relative; z-index:10;"></iframe>\`;
-            } else {
-                playerHtml = \`<video id="mainPlayer" controls autoplay style="width:100%; height:100%; position:relative; z-index:10; background:#000;"><source src="\${newUrl}" type="video/mp4"></video>\`;
-            }
-            playerContainer.innerHTML = playerHtml;
-            const newVideo = document.getElementById('mainPlayer');
-            if (newVideo) { newVideo.load(); newVideo.play().catch(e => console.log("Auto")); }
-        } catch (error) { console.error(error); alert('サーバー切り替えに失敗しました。'); } finally { overlay.classList.remove('active'); }
+            let history = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]');
+            history = history.filter(function(item) { return item.id !== CURRENT_VIDEO_ID; });
+            history.unshift({ id: CURRENT_VIDEO_ID, title: CURRENT_TITLE, channel: CURRENT_CHANNEL, ts: Date.now() });
+            localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 30)));
+        } catch(e) {}
     }
 
-    async function loadRecommendations() {
-        const params = new URLSearchParams({ title: "${videoData.videoTitle}", channel: "${videoData.channelName}", id: "${videoId}" });
-        const res = await fetch(\`/api/recommendations?\${params.toString()}\`);
-        const data = await res.json();
-        const shorts = data.items.filter(item => item.title.includes('#'));
-        const regulars = data.items.filter(item => !item.title.includes('#'));
-        document.getElementById('recommendations').innerHTML = regulars.map(item => \`
-            <a href="/video/\${item.id}" class="rec-item">
-                <div class="rec-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/mqdefault.jpg"></div>
-                <div class="rec-info">
-                    <div class="rec-title">\${item.title}</div>
-                    <div class="rec-meta">\${item.channelTitle}</div>
-                    <div class="rec-meta">\${item.viewCountText || ''}</div>
+    function getHistory() {
+        try { return JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch(e) { return []; }
+    }
+
+    function getSubscribedChannels() {
+        var subs = [];
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.startsWith('subscribed_') && localStorage.getItem(key) === 'true') {
+                    subs.push(key.replace('subscribed_', ''));
+                }
+            }
+        } catch(e) {}
+        return subs;
+    }
+
+    // ============================
+    // ローディングUI (Groq風アニメ)
+    // ============================
+    function showGroqLoading() {
+        var el = document.getElementById('aiRecContent');
+        if (!el) return;
+        el.innerHTML = \`
+            <div class="groq-loading">
+                <div class="groq-loading-dots">
+                    <div class="groq-dot"></div>
+                    <div class="groq-dot"></div>
+                    <div class="groq-dot"></div>
+                    <div class="groq-dot"></div>
                 </div>
-            </a>
-        \`).join('');
-        if (shorts.length > 0) {
-            const shelf = document.getElementById('shortsShelf');
-            const grid = document.getElementById('shortsGrid');
-            shelf.style.display = 'block';
-            grid.innerHTML = shorts.slice(0, 4).map(item => \`
-                <a href="/video/\${item.id}" class="short-card">
-                    <div class="short-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/hq720.jpg"></div>
-                    <div class="short-info">
-                        <div class="short-title">\${item.title}</div>
-                        <div class="short-views">\${item.viewCountText || ''}</div>
-                    </div>
-                </a>
-            \`).join('');
-        }
+                <div class="groq-wave"><div class="groq-wave-bar"></div></div>
+                <div class="groq-loading-text">
+                    <span>Groq AI</span> があなたの視聴履歴を解析中...<br>
+                    最適な次の動画を選んでいます
+                </div>
+            </div>
+        \`;
     }
-    window.onload = () => {
-        loadRecommendations();
 
-        // ページ読み込み時に localStorage の再生方法を即座に適用
-        // (sessionStorage ガードと setTimeout を廃止: 毎回正しいモードで初期化する)
-        const savedMode = localStorage.getItem('playbackMode') || 'googlevideo';
-        const serverEndpoints = {
-            'googlevideo':        '',
-            'youtube-nocookie':   '/nocookie/${videoId}',
-            'DL-Pro':             '/360/${videoId}',
-            'YoutubeEdu-Kahoot':  '/kahoot-edu/${videoId}',
-            'YoutubeEdu-Scratch': '/scratch-edu/${videoId}',
-            'Youtube-Pro':        '/pro-stream/${videoId}'
-        };
-        const serverName = serverEndpoints.hasOwnProperty(savedMode) ? savedMode : 'googlevideo';
-        const endpointPath = serverEndpoints[serverName];
+    // ============================
+    // Groq API 呼び出し
+    // ============================
+    async function callGroqAPI(history, subs) {
+        var historyText = history.length > 0
+            ? history.map(function(h) { return '- ' + h.title + ' (チャンネル: ' + h.channel + ')'; }).join('\n')
+            : '- （視聴履歴なし）';
 
-        // 対応する .server-option 要素を探してアクティブにする
-        const options = document.querySelectorAll('.server-option');
-        let targetOption = options[0];
-        options.forEach(opt => {
-            const onclick = opt.getAttribute('onclick') || '';
-            if (onclick.includes("'" + serverName + "'")) targetOption = opt;
+        var subsText = subs.length > 0 ? subs.join(', ') : '（登録なし）';
+
+        var prompt = '以下のユーザー情報を基にこのユーザーにおすすめできる次の動画のタイトルを教えてください。動画のタイトルは「」内に書いてください。\n\n'
+            + '【最近の視聴履歴（新しい順）】\n' + historyText + '\n\n'
+            + '【登録チャンネル】\n' + subsText + '\n\n'
+            + '上記の情報からユーザーの好みを分析し、次に見たいと思う動画タイトルを1つだけ「」に入れて返してください。';
+
+        var response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + GROQ_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 256
+            })
         });
 
-        if (targetOption) {
-            changeServer(serverName, endpointPath, { currentTarget: targetOption });
+        if (!response.ok) { throw new Error('Groq API error: ' + response.status); }
+        var data = await response.json();
+        var text = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+        var match = text.match(/「(.+?)」/);
+        return match ? match[1] : text.replace(/[「」]/g, '').trim();
+    }
+
+    // ============================
+    // 動画検索
+    // ============================
+    async function searchVideoByTitle(query) {
+        var params = new URLSearchParams({ title: query, channel: '', id: 'search' });
+        var res = await fetch('/api/recommendations?' + params.toString());
+        if (!res.ok) { throw new Error('Search API error'); }
+        var data = await res.json();
+        return (data.items && data.items.length > 0) ? data.items[0] : null;
+    }
+
+    // ============================
+    // AI 結果レンダリング
+    // ============================
+    function renderAIResult(video) {
+        var el = document.getElementById('aiRecContent');
+        if (!el) return;
+        if (!video) {
+            el.innerHTML = '<div style="font-size:13px; color:var(--text-sub); text-align:center; padding:16px 0;">おすすめが見つかりませんでした。</div>';
+            return;
+        }
+        el.innerHTML = \`
+            <a href="/video/\${video.id}" class="ai-result-link">
+                <div class="ai-result-thumb">
+                    <img src="https://i.ytimg.com/vi/\${video.id}/mqdefault.jpg" 
+                         alt="\${(video.title || '').replace(/"/g,'&quot;')}"
+                         onerror="this.src='https://i.ytimg.com/vi/\${video.id}/default.jpg'">
+                    <div class="ai-result-badge">✦ AI推奨</div>
+                </div>
+                <div class="ai-result-info">
+                    <div class="ai-result-title">\${video.title || ''}</div>
+                    <div class="ai-result-channel">\${video.channelTitle || ''}</div>
+                    <div class="ai-personalized-tag">✦ あなた専用のおすすめ</div>
+                </div>
+            </a>
+        \`;
+    }
+
+    // ============================
+    // AI メイン処理
+    // ============================
+    async function loadAI() {
+        if (aiLoadInProgress) return;
+        if (aiAlreadyLoaded && aiVideoResult !== undefined) {
+            // キャッシュ済みなら再レンダリングするだけ
+            renderAIResult(aiVideoResult);
+            return;
+        }
+
+        aiLoadInProgress = true;
+        showGroqLoading();
+
+        try {
+            var history = getHistory();
+            var subs    = getSubscribedChannels();
+            var suggestedTitle = await callGroqAPI(history, subs);
+            var video = suggestedTitle ? await searchVideoByTitle(suggestedTitle) : null;
+            aiVideoResult   = video;
+            aiAlreadyLoaded = true;
+            renderAIResult(video);
+        } catch(e) {
+            console.error('AI recommendation error:', e);
+            var el = document.getElementById('aiRecContent');
+            if (el) {
+                el.innerHTML = '<div style="font-size:13px; color:var(--text-sub); text-align:center; padding:16px 0;">エラーが発生しました。後でもう一度お試しください。</div>';
+            }
+        } finally {
+            aiLoadInProgress = false;
+        }
+    }
+
+    // ============================
+    // AI UI 初期化（ページロード時）
+    // ============================
+    function initAIUI() {
+        // 永久非表示なら何もしない
+        if (localStorage.getItem(LS_AI_DISMISSED) === 'true') return;
+
+        var isFirstTime = localStorage.getItem(LS_AI_FIRST_DONE) !== 'true';
+
+        if (isFirstTime) {
+            // 初回：サイドバー最上部に表示 + ロード開始
+            localStorage.setItem(LS_AI_FIRST_DONE, 'true');
+            showAICard();
+            loadAI();
+        } else {
+            // 2回目以降：右上ジャンプボタン表示
+            showAIJumpBtn();
+        }
+    }
+
+    function showAICard() {
+        var wrapper = document.getElementById('aiRecWrapper');
+        if (wrapper) wrapper.style.display = 'block';
+    }
+
+    function hideAICard() {
+        var wrapper = document.getElementById('aiRecWrapper');
+        if (wrapper) wrapper.style.display = 'none';
+    }
+
+    function showAIJumpBtn() {
+        var btn = document.getElementById('aiJumpBtn');
+        if (btn) btn.style.display = 'flex';
+    }
+
+    function hideAIJumpBtn() {
+        var btn = document.getElementById('aiJumpBtn');
+        if (btn) btn.style.display = 'none';
+    }
+
+    // ============================
+    // AI ジャンプボタン クリック
+    // ============================
+    window.handleAIJumpBtnClick = function(e) {
+        if (e) e.stopPropagation();
+        hideAIJumpBtn();
+        showAICard();
+        loadAI();
+        setTimeout(function() {
+            var wrapper = document.getElementById('aiRecWrapper');
+            if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    };
+
+    // ジャンプボタン自体の × クリック（カードは表示しない）
+    window.dismissAIJumpBtn = function(e) {
+        if (e) e.stopPropagation();
+        localStorage.setItem(LS_AI_DISMISSED, 'true');
+        hideAIJumpBtn();
+    };
+
+    // カード内 × クリック → 永久非表示
+    window.dismissAIPermanently = function() {
+        if (confirm('AIおすすめ機能を非表示にしますか？\\n（設定はブラウザに保存されます）')) {
+            localStorage.setItem(LS_AI_DISMISSED, 'true');
+            hideAICard();
+            hideAIJumpBtn();
         }
     };
+
+    // ============================
+    // 既存機能の維持
+    // ============================
+    window.toggleServerMenu = function() {
+        var menu = document.getElementById('serverMenu');
+        if (menu) menu.classList.toggle('show');
+    };
+
+    window.changeServer = async function(serverName, endpointPath, event) {
+        var menu = document.getElementById('serverMenu');
+        if (menu) menu.classList.remove('show');
+        var options = document.querySelectorAll('.server-option');
+        options.forEach(function(opt) { opt.classList.remove('active'); });
+        if (event) event.currentTarget.classList.add('active');
+
+        var overlay = document.getElementById('videoLoadingOverlay');
+        if (overlay) overlay.classList.add('active');
+
+        try {
+            var newUrl = '';
+            if (serverName === 'googlevideo') {
+                newUrl = "${videoData.stream_url}" === "youtube-nocookie"
+                    ? 'https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1'
+                    : "${videoData.stream_url}";
+            } else if (serverName === 'Youtube-Pro') {
+                newUrl = endpointPath;
+            } else {
+                var r = await fetch(endpointPath);
+                newUrl = await r.text();
+            }
+
+            var playerContainer = document.getElementById('playerWrapper');
+            if (!playerContainer) return;
+
+            var isIframe = ['YoutubeEdu-Kahoot', 'YoutubeEdu-Scratch', 'Youtube-Pro', 'youtube-nocookie'].includes(serverName) || newUrl.includes('embed');
+            playerContainer.innerHTML = isIframe
+                ? '<iframe src="' + newUrl + '" frameborder="0" allowfullscreen style="width:100%;height:100%;"></iframe>'
+                : '<video controls autoplay style="width:100%;height:100%;background:#000;"><source src="' + newUrl + '" type="video/mp4"></video>';
+        } catch(e) {
+            console.error('changeServer error:', e);
+        } finally {
+            if (overlay) overlay.classList.remove('active');
+        }
+    };
+
+    async function loadRecommendations() {
+        try {
+            var params = new URLSearchParams({ title: CURRENT_TITLE, channel: CURRENT_CHANNEL, id: CURRENT_VIDEO_ID });
+            var res = await fetch('/api/recommendations?' + params.toString());
+            var data = await res.json();
+            var el = document.getElementById('recommendations');
+            if (!el) return;
+            el.innerHTML = data.items.map(function(item) {
+                return \`<a href="/video/\${item.id}" class="rec-item">
+                    <div class="rec-thumb"><img src="https://i.ytimg.com/vi/\${item.id}/mqdefault.jpg" alt="" onerror="this.src='https://i.ytimg.com/vi/\${item.id}/default.jpg'"></div>
+                    <div class="rec-info">
+                        <div class="rec-title">\${item.title || ''}</div>
+                        <div class="rec-meta">\${item.channelTitle || ''}</div>
+                        <div class="rec-meta">\${item.viewCountText || ''}</div>
+                    </div>
+                </a>\`;
+            }).join('');
+        } catch(e) {
+            console.error('loadRecommendations error:', e);
+        }
+    }
+
+    // ============================
+    // ページロード
+    // ============================
+    window.addEventListener('load', function() {
+        saveHistory();
+        loadRecommendations();
+        initAIUI();
+
+        var savedMode = localStorage.getItem('playbackMode') || 'googlevideo';
+        changeServer(savedMode, '/pro-stream/${videoId}', null);
+    });
+
+})();
 </script>
 </body>
 </html>

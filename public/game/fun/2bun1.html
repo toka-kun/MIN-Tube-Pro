@@ -1,1 +1,284 @@
-<!DOCTYPE html><html lang=ja><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>1/2生存ゲーム (Ultimate Edition)</title><script src=https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2></script><style>:root{--p:#3ecf8e;--d:#ff453a;--bg:#0f0f10;--card:#161616}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:linear-gradient(180deg,#0b0b0c 0,#0f0f10 100%);color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px}.container{background:var(--card);padding:2rem;border-radius:18px;text-align:center;width:100%;max-width:480px;border:1px solid rgba(255,255,255,.03);box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden;position:relative}h1,h2,h3{margin:0 0 10px 0}.prob{font-size:2.2rem;font-weight:800;margin:18px 0;color:var(--p);text-shadow:0 0 18px rgba(62,207,142,.18);display:inline-block;transform-origin:center center}.screen{position:absolute;inset:0;padding:2rem;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;opacity:0;pointer-events:none;transform:translateY(10px) scale(.995)}.screen.active{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition:all 420ms cubic-bezier(.2,.9,.2,1)}.screen.leave{opacity:0;pointer-events:none;transform:translateY(-8px) scale(.995);transition:all 260ms ease-in}button{background:var(--p);color:#000;border:none;padding:12px 16px;border-radius:10px;cursor:pointer;width:100%;margin:8px 0;font-size:1.05rem;font-weight:700;transition:transform .18s ease,box-shadow .18s;box-shadow:0 6px 18px rgba(62,207,142,.08)}button:hover:not(:disabled){transform:translateY(-4px);box-shadow:0 12px 30px rgba(62,207,142,.12)}button:active{transform:translateY(-1px) scale(.995)}button.secondary{background:#333;color:#ccc;width:auto;padding:10px 14px}button.small{padding:8px 10px;font-size:.95rem;width:auto}button:disabled{background:#555;opacity:.7;cursor:not-allowed}input{width:100%;padding:12px;margin:8px 0;background:#1b1b1b;border:1px solid #2f2f2f;color:#fff;border-radius:8px;text-align:center}.row{display:flex;gap:10px;width:100%}.row button{flex:1}.msg{color:#9aa0a6;font-size:.9rem;margin-bottom:6px}table{width:100%;margin-top:12px;border-collapse:collapse;font-size:.95rem}td,th{padding:10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left}th{color:var(--p);font-weight:700}.display-streak{color:#bfc7c3;font-size:.95rem}@keyframes pulseScale{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}.pulse{animation:pulseScale .6s cubic-bezier(.2,.9,.2,1)}@keyframes glow{0%{text-shadow:0 0 0 rgba(62,207,142,0)}50%{text-shadow:0 0 18px rgba(62,207,142,.25)}100%{text-shadow:0 0 0 rgba(62,207,142,0)}}.glow{animation:glow .9s ease}.btn-wrap{position:relative;overflow:hidden;border-radius:10px}.ripple{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.18);animation:ripple .6s linear;pointer-events:none}@keyframes ripple{to{transform:scale(6);opacity:0}}.confetti-piece{position:absolute;width:10px;height:16px;opacity:0;pointer-events:none;transform-origin:center;will-change:transform,opacity}.instructions{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.03);text-align:left;color:#d6d9d8;max-height:60vh;overflow:auto}.muted{color:#9aa0a6;font-size:.9rem}.center{display:flex;align-items:center;justify-content:center}.hidden{display:none}</style></head><body><div class=container id=app><div id=confetti-root style=position:absolute;inset:0;pointer-events:none;overflow:hidden></div><div id=screen-start class="screen active"><h1>二分の一生存ゲーム</h1><p class=muted>1/2をどこまで当て続けられるか？</p><div style=width:100%;max-width:320px><div class=btn-wrap style=margin-bottom:8px><button id=btn-start>ゲーム開始</button></div><div style=display:flex;gap:8px;margin-top:6px><button id=btn-rank-view class="secondary small">ランキング</button><button id=btn-show-help class="secondary small">説明</button></div></div><div style=margin-top:14px class=muted>連続で当てるほど確率は1/2の累乗になります</div></div><div id=screen-help class=screen><h2>遊び方</h2><div class=instructions id=help-content><h3>ルール</h3><p>左右どちらかを選択します。正解なら成功回数が1増え、次はさらに確率が半分になります。間違えるとゲームオーバーです。</p><h3>操作</h3><ul><li>「左」または「右」をクリックして選択します。</li><li>正解が続くほど「1 / 2^n」のように確率表示が増えます。</li><li>ゲームオーバー時に上位10位に入っていれば名前を保存できます。</li></ul><h3>ヒント</h3><ul><li>完全なランダム判定なので運が全てです。</li><li>スコアは成功回数で競います。</li></ul></div><div style=width:100%;max-width:360px;margin-top:12px><button class="back-btn secondary">戻る</button></div></div><div id=screen-game class=screen><div class=display-streak id=display-streak>0回成功</div><div style=height:8px></div><div class=prob id=display-prob>1 / 1</div><div style=height:12px></div><div class=row style=width:100%><div class=btn-wrap><button id=btn-left>左</button></div><div class=btn-wrap><button id=btn-right>右</button></div></div><div style=height:8px></div><div class=msg id=game-msg>どちらかを選んでください</div></div><div id=screen-result class=screen><h2 style=color:var(--d)>GAME OVER</h2><div id=final-stats></div><div id=rank-in-section style=display:none;width:100%;max-width:360px><p style="color:var(--p);font-weight:700;margin:6px 0">TOP10ランクイン！</p><input type=text id=player-name placeholder=名前(10文字) maxlength=10><button id=btn-save>ランキングに刻む</button></div><div id=rank-out-section style=display:none class=msg>ランク外のため記録されません</div><div style=width:100%;max-width:360px;margin-top:12px><button class="back-btn secondary">タイトルへ戻る</button></div></div><div id=screen-ranking class=screen><h3>世界TOP 10</h3><div id=rank-loading class=muted>読み込み中…</div><table id=rank-table style=width:100%;margin-top:8px></table><div style=width:100%;max-width:360px;margin-top:12px><button class="back-btn secondary">戻る</button></div></div></div><script>!function(){const t=supabase.createClient("https://dpkctspxzyibymqfdivc.supabase.co","sb_publishable_R3dp3UKUmb_cevCJXsE9gA_uyg3qWRI");let e=null,n=0,a=!1;const s=["start","help","game","result","ranking"],r=t=>document.getElementById(t),i=t=>{s.forEach((e=>{const n=r("screen-"+e);n&&(e===t?(n.classList.add("active"),n.classList.remove("leave")):n.classList.contains("active")?(n.classList.add("leave"),setTimeout((()=>{n.classList.remove("active"),n.classList.remove("leave")}),260)):n.classList.remove("active"))}))},c=()=>{e=null,n=0,a=!1,r("display-streak").innerText="0回成功",r("display-prob").innerText="1 / 1",r("player-name").value="",r("btn-save").disabled=!1,r("btn-save").innerText="ランキングに刻む",m(),i("start")},o=(t,e)=>{const n=t.closest(".btn-wrap")||t.parentElement,a=n.getBoundingClientRect(),s=document.createElement("span");s.className="ripple";const r=Math.max(a.width,a.height);s.style.width=s.style.height=r+"px",s.style.left=e.clientX-a.left-r/2+"px",s.style.top=e.clientY-a.top-r/2+"px",n.appendChild(s),setTimeout((()=>s.remove()),700)},l=r("confetti-root");let d=[];const m=()=>{d.forEach((t=>clearTimeout(t))),d=[],l.innerHTML=""};r("btn-start").onclick=async a=>{o(a.currentTarget,a);const{data:s,error:c}=await t.rpc("start_game_nemmi");if(c)return alert("接続エラー。SQLを実行してください。");e=s[0].session_id,n=0,r("display-streak").innerText="0回成功",r("display-prob").innerText="1 / 1",i("game")};const p=async(s,i)=>{if(a)return;a=!0,o(i.currentTarget,i);const{data:l,error:d}=await t.rpc("submit_choice_nemmi",{p_session_id:e,p_choice:s});if(d)return alert("不正な操作またはタイムアウトを検知しました。"),void c();const m=l[0];if(n=m.current_streak,m.is_correct){const t=r("display-streak"),e=r("display-prob");t.innerText=`${n}回成功`,e.innerText=`1 / ${Math.pow(2,n).toLocaleString()}`,t.classList.remove("pulse"),t.offsetWidth,t.classList.add("pulse"),e.classList.remove("glow"),e.offsetWidth,e.classList.add("glow"),r("game-msg").innerText="正解！次も挑戦してみよう",a=!1}else r("game-msg").innerText="不正解でした",y()},y=async()=>{r("final-stats").innerHTML=`<h3 style="margin:6px 0">${n}回成功</h3>`;const{data:e}=await t.from("ranking_nemmi").select("score").order("score",{ascending:!1}).limit(10);n>0&&(e.length<10||n>=e[e.length-1].score)?(r("rank-in-section").style.display="block",r("rank-out-section").style.display="none",setTimeout((()=>((t=24)=>{m();const e=["#FF6B6B","#FFD93D","#6BCB77","#4D96FF","#C77DFF"];for(let n=0;n<t;n++){const t=document.createElement("div");t.className="confetti-piece",t.style.background=e[n%e.length],t.style.left=50+80*(Math.random()-.5)+"%",t.style.top="-10%",t.style.opacity="1",t.style.transform=`rotate(${360*Math.random()}deg) translateY(0)`,l.appendChild(t);const a=120*(Math.random()-.5),s=200+260*Math.random(),r=720*(Math.random()-.5),i=120*Math.random(),c=1200+900*Math.random();t.animate([{transform:"translate(0px, 0px) rotate(0deg)",opacity:1},{transform:`translate(${a}px, ${s}px) rotate(${r}deg)`,opacity:.85}],{duration:c,easing:"cubic-bezier(.2,.9,.2,1)",delay:i}),d.push(setTimeout((()=>t.style.opacity="0"),c+i)),d.push(setTimeout((()=>t.remove()),c+i+200))}})(28)),220)):(r("rank-in-section").style.display="none",r("rank-out-section").style.display="block",m()),i("result"),a=!1};r("btn-left").onclick=t=>p("left",t),r("btn-right").onclick=t=>p("right",t),r("btn-save").onclick=async()=>{const n=r("player-name").value.trim();if(!n)return alert("名前を入力してください");const a=r("btn-save");a.disabled=!0,a.innerText="保存中...";const{error:s}=await t.rpc("save_score_nemmi",{p_session_id:e,p_name:n});s?(alert("保存に失敗しました。ランク外になった可能性があります。"),c()):h()};const h=async()=>{i("ranking"),r("rank-loading").style.display="block",r("rank-table").innerHTML="";const{data:e}=await t.from("ranking_nemmi").select("name, score").order("score",{ascending:!1}).limit(10);r("rank-loading").style.display="none";let n="<tr><th>位</th><th>名前</th><th>成功</th></tr>";e&&e.length>0?e.forEach(((t,e)=>n+=`<tr><td>${e+1}</td><td>${u(t.name)}</td><td>${t.score}回</td></tr>`)):n+="<tr><td colspan='3'>記録がありません</td></tr>",r("rank-table").innerHTML=n},u=t=>String(t).replace(/[&<>"']/g,(t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[t])));r("btn-rank-view").onclick=h,r("btn-show-help").onclick=()=>i("help"),document.querySelectorAll(".back-btn").forEach((t=>t.onclick=c)),window.addEventListener("keydown",(t=>{document.querySelector("#screen-game.active")&&("ArrowLeft"===t.key&&r("btn-left").click(),"ArrowRight"===t.key&&r("btn-right").click())})),document.querySelectorAll("button").forEach((t=>{t.addEventListener("click",(t=>{try{o(t.currentTarget,t)}catch(t){}}))})),c()}()</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1/2生存ゲーム (Ultimate Edition)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{--p:#3ecf8e;--d:#ff453a;--bg:#121212;--card:#1e1e1e}
+        body{font-family:sans-serif;background:var(--bg);color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+        .container{background:var(--card);padding:2rem;border-radius:20px;text-align:center;width:90%;max-width:400px;border:1px solid #333;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
+        .prob{font-size:2.2rem;font-weight:bold;margin:20px 0;color:var(--p);text-shadow:0 0 10px rgba(62,207,142,0.3)}
+        .screen{display:none}.active{display:block}
+        button{background:var(--p);color:#000;border:none;padding:15px;border-radius:10px;cursor:pointer;width:100%;margin:8px 0;font-size:1.1rem;font-weight:bold;transition:0.2s}
+        button:hover:not(:disabled){transform:translateY(-2px);opacity:0.9}
+        button:disabled{background:#555;opacity:0.7;cursor:not-allowed}
+        input{width:100%;padding:12px;margin:15px 0;background:#2a2a2a;border:1px solid #444;color:white;border-radius:8px;text-align:center}
+        table{width:100%;margin-top:20px;border-collapse:collapse;font-size:0.9rem}
+        th,td{padding:10px;border-bottom:1px solid #333}
+        th{color:var(--p)}
+        .msg{color:#888;font-size:0.85rem;margin-bottom:15px}
+
+        /* タイトルの光るアニメーション */
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px #3ecf8e; }
+            50% { text-shadow: 0 0 20px #3ecf8e; }
+            100% { text-shadow: 0 0 10px #3ecf8e; }
+        }
+        h1 {
+            animation: glow 2s infinite;
+        }
+
+        /* 説明カード */
+        .info-box {
+            background:#1b1b1b;
+            padding:1.5rem;
+            border-radius:15px;
+            border:1px solid #333;
+            margin-top:20px;
+            text-align:left;
+            font-size:0.95rem;
+            line-height:1.6;
+        }
+
+        .back-btn {
+            margin-top:25px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- タイトル画面 -->
+    <div id="screen-start" class="screen active">
+        <h1>二分の一生存ゲーム</h1>
+        <p>1/2をどこまで当て続けられるか？</p>
+        <button id="btn-start">ゲーム開始</button>
+        <button id="btn-howto" style="background:#333;color:#ccc">遊び方</button>
+        <button id="btn-rank-view" style="background:#333;color:#ccc">ランキング</button>
+    </div>
+
+    <!-- 遊び方画面 -->
+    <div id="screen-howto" class="screen">
+        <h2>遊び方</h2>
+        <div class="info-box">
+            <p><strong>1/2生存ゲーム</strong>は、毎回 <strong>1/2 の確率</strong>を当て続けるシンプルなゲームです。</p>
+
+            <p>
+                ・「左」か「右」のどちらかを選ぶ<br>
+                ・当たれば <strong>成功回数 +1</strong><br>
+                ・成功回数が増えるほど、<br>
+                <span style="color:#3ecf8e;font-weight:bold;">1 / 2ⁿ</span> の確率に挑戦することになります
+            </p>
+
+            <p>
+                例：<br>
+                1回成功 → 1/2<br>
+                5回成功 → 1/32<br>
+                10回成功 → 1/1,024
+            </p>
+
+            <p>
+                どこまで生き残れるかは、<strong>完全に運</strong>。<br>
+                でも、連続成功すると気持ちよくなってきます。
+            </p>
+
+            <p>
+                失敗したら即ゲームオーバー。<br>
+                あなたの<strong>最高連続成功回数</strong>が、<br>
+                世界TOP10に入れば名前を刻めます。
+            </p>
+        </div>
+
+        <button class="back-btn" style="background:#333;color:#ccc">戻る</button>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="screen-game" class="screen">
+        <div id="display-streak" style="color:#888">0回成功</div>
+        <div class="prob" id="display-prob">1 / 1</div>
+        <div style="display:flex; gap:10px;">
+            <button id="btn-left" style="flex:1">左</button>
+            <button id="btn-right" style="flex:1">右</button>
+        </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="screen-result" class="screen">
+        <h2 style="color:var(--d)">GAME OVER</h2>
+        <div id="final-stats"></div>
+        
+        <div id="rank-in-section" style="display:none;">
+            <p style="color:var(--p);font-weight:bold;">TOP10ランクイン！</p>
+            <input type="text" id="player-name" placeholder="名前(10文字)" maxlength="10">
+            <button id="btn-save">ランキングに刻む</button>
+        </div>
+
+        <div id="rank-out-section" style="display:none;" class="msg">
+            ランク外のため記録されません
+        </div>
+
+        <button class="back-btn" style="background:#333;color:#ccc">タイトルへ戻る</button>
+    </div>
+
+    <!-- ランキング画面 -->
+    <div id="screen-ranking" class="screen">
+        <h3>世界TOP 10</h3>
+        <table id="rank-table" style="width:100%"></table>
+        <button class="back-btn" style="margin-top:20px;background:#333;color:#ccc">戻る</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    const SUPABASE_URL = "https://dpkctspxzyibymqfdivc.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_R3dp3UKUmb_cevCJXsE9gA_uyg3qWRI";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let sessionId = null;
+    let currentStreak = 0;
+    let isProcessing = false;
+
+    // --- 状態リセット関数 ---
+    const resetToTitle = () => {
+        sessionId = null; currentStreak = 0; isProcessing = false;
+        document.getElementById('display-streak').innerText = "0回成功";
+        document.getElementById('display-prob').innerText = "1 / 1";
+        const nameInput = document.getElementById('player-name');
+        if (nameInput) nameInput.value = "";
+        const saveBtn = document.getElementById('btn-save');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "ランキングに刻む";
+        }
+        showScreen('start');
+    };
+
+    const showScreen = (id) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + id).classList.add('active');
+    };
+
+    // ゲーム開始
+    document.getElementById('btn-start').onclick = async () => {
+        const { data, error } = await _supabase.rpc('start_game_nemmi');
+        if (error) {
+            alert("接続エラー。SQLを実行してください。");
+            return;
+        }
+        sessionId = data[0].session_id;
+        showScreen('game');
+    };
+
+    // 判定
+    const handleChoice = async (choice) => {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        const { data, error } = await _supabase.rpc('submit_choice_nemmi', {
+            p_session_id: sessionId, p_choice: choice
+        });
+
+        if (error) {
+            alert("不正な操作またはタイムアウトを検知しました。");
+            resetToTitle();
+            return;
+        }
+
+        const res = data[0];
+        currentStreak = res.current_streak;
+
+        if (res.is_correct) {
+            document.getElementById('display-streak').innerText = `${currentStreak}回成功`;
+            document.getElementById('display-prob').innerText = `1 / ${Math.pow(2, currentStreak).toLocaleString()}`;
+            isProcessing = false;
+        } else {
+            endGame();
+        }
+    };
+
+    const endGame = async () => {
+        document.getElementById('final-stats').innerHTML = `<h3>${currentStreak}回成功</h3>`;
+        
+        // ランクイン判定
+        const { data: topScores } = await _supabase
+            .from('ranking_nemmi')
+            .select('score')
+            .order('score', {ascending: false})
+            .limit(10);
+
+        const isRankIn = currentStreak > 0 && (
+            (topScores && topScores.length < 10) ||
+            (topScores && topScores.length > 0 && currentStreak >= topScores[topScores.length - 1].score)
+        );
+
+        if (isRankIn) {
+            document.getElementById('rank-in-section').style.display = 'block';
+            document.getElementById('rank-out-section').style.display = 'none';
+        } else {
+            document.getElementById('rank-in-section').style.display = 'none';
+            document.getElementById('rank-out-section').style.display = 'block';
+        }
+        
+        showScreen('result');
+        isProcessing = false;
+    };
+
+    document.getElementById('btn-left').onclick = () => handleChoice('left');
+    document.getElementById('btn-right').onclick = () => handleChoice('right');
+
+    // 保存
+    document.getElementById('btn-save').onclick = async () => {
+        const name = document.getElementById('player-name').value.trim();
+        if (!name) {
+            alert("名前を入力してください");
+            return;
+        }
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true; btn.innerText = "保存中...";
+        
+        const { error } = await _supabase.rpc('save_score_nemmi', {
+            p_session_id: sessionId, p_name: name
+        });
+        
+        if (error) {
+            alert("保存に失敗しました。ランク外になった可能性があります。");
+            resetToTitle();
+        } else {
+            loadRanking();
+        }
+    };
+
+    // ランキング表示
+    const loadRanking = async () => {
+        showScreen('ranking');
+        const { data } = await _supabase
+            .from('ranking_nemmi')
+            .select('name, score')
+            .order('score', {ascending: false})
+            .limit(10);
+
+        let html = "<tr><th>位</th><th>名前</th><th>成功</th></tr>";
+        if (data && data.length > 0) {
+            data.forEach((r, i) => {
+                html += `<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${r.score}回</td></tr>`;
+            });
+        } else {
+            html += "<tr><td colspan='3'>記録がありません</td></tr>";
+        }
+        document.getElementById('rank-table').innerHTML = html;
+    };
+
+    const escapeHtml = (s) => s.replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+
+    document.getElementById('btn-rank-view').onclick = loadRanking;
+    document.getElementById('btn-howto').onclick = () => showScreen('howto');
+    document.querySelectorAll('.back-btn').forEach(btn => btn.onclick = resetToTitle);
+
+})();
+</script>
+</body>
+</html>

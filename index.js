@@ -493,7 +493,7 @@ const shortsHtml = `
         .search-btn { background: #222; border: 1px solid #303030; border-left: none; border-radius: 0 40px 40px 0; width: 64px; height: 40px; color: white; cursor: pointer; }
         .container { margin-top: 56px; display: flex; justify-content: center; padding: 24px; gap: 24px; max-width: 1700px; margin-left: auto; margin-right: auto; }
         .main-content { flex: 1; min-width: 0; position: relative; }
-        .sidebar { width: 400px; flex-shrink: 0; }
+        .sidebar { width: 400px; flex-shrink: 0; position: relative; }
         .player-container { width: 100%; aspect-ratio: 16 / 9; background: black; border-radius: 12px; overflow: hidden; position: relative; z-index: 100; box-shadow: 0 4px 30px rgba(0,0,0,0.7); }
         .video-title { font-size: 20px; font-weight: bold; margin: 12px 0; line-height: 28px; }
         .owner-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -534,7 +534,32 @@ const shortsHtml = `
         .video-loading-overlay.active { opacity: 1; pointer-events: auto; }
         .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 50px; height: 50px; border-radius: 50%; border-top-color: var(--yt-red); animation: spin 1s ease-in-out infinite; margin-bottom: 16px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @media (max-width: 1000px) { .container { flex-direction: column; padding: 0; } .sidebar { width: 100%; padding: 16px; box-sizing: border-box; } .player-container { border-radius: 0; } .main-content { padding: 16px; } }
+        
+        /* --- AI Recommendation CSS --- */
+        .ai-rec-card { background: linear-gradient(145deg, #181818, #222); border: 1px solid rgba(66, 133, 244, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 16px; position: relative; overflow: hidden; display: none; flex-direction: column; }
+        .ai-rec-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570, #f4b400); background-size: 200% 100%; animation: gradientMove 3s linear infinite; }
+        .ai-rec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .ai-rec-title-tag { font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .ai-rec-title-tag i { background: linear-gradient(90deg, #4285f4, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .ai-rec-close { cursor: pointer; color: #888; transition: color 0.2s; padding: 4px; }
+        .ai-rec-close:hover { color: white; }
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        
+        /* Gemini Style Loader */
+        .gemini-loader { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 30px; }
+        .gemini-dot { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #d96570); animation: geminiPulse 1.5s infinite ease-in-out; }
+        .gemini-dot:nth-child(2) { animation-delay: 0.2s; }
+        .gemini-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes geminiPulse { 0%, 100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 10px rgba(66, 133, 244, 0.5); } }
+
+        /* Floating AI Button */
+        .ai-floating-btn { position: fixed; top: 70px; right: 24px; background: linear-gradient(135deg, #1e1e1e, #2a2a2a); border: 1px solid #444; border-radius: 20px; display: none; align-items: center; padding: 8px 16px; gap: 10px; cursor: pointer; z-index: 900; box-shadow: 0 4px 20px rgba(0,0,0,0.6); transition: all 0.3s ease; }
+        .ai-floating-btn:hover { background: linear-gradient(135deg, #2a2a2a, #3a3a3a); transform: translateY(-2px); }
+        .ai-floating-text { font-weight: bold; background: linear-gradient(90deg, #4285f4, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 14px; }
+        .ai-floating-btn-close { background: none; border: none; color: #888; margin-left: 4px; padding: 0; cursor: pointer; display: flex; align-items: center; }
+        .ai-floating-btn-close:hover { color: #fff; }
+
+        @media (max-width: 1000px) { .container { flex-direction: column; padding: 0; } .sidebar { width: 100%; padding: 16px; box-sizing: border-box; } .player-container { border-radius: 0; } .main-content { padding: 16px; } .ai-floating-btn { top: auto; bottom: 20px; right: 20px; } }
     </style>
 </head>
 <body>
@@ -586,6 +611,8 @@ const shortsHtml = `
         </div>
     </div>
     <div class="sidebar">
+        <div id="aiRecCard" class="ai-rec-card"></div>
+        
         <div id="recommendations"></div>
         <div id="shortsShelf" class="shorts-shelf-container" style="display:none;">
             <div class="shorts-shelf-title">
@@ -599,6 +626,14 @@ const shortsHtml = `
         </div>
     </div>
 </div>
+
+<div id="aiFloatingBtn" class="ai-floating-btn">
+    <i class="fas fa-sparkles" style="color:#4285f4;"></i>
+    <span class="ai-floating-text" onclick="triggerFloatingAi()">AIのおすすめに飛ぶ</span>
+    <button class="ai-floating-btn-close" onclick="hideAiForever(event)"><i class="fas fa-times"></i></button>
+</div>
+
+<div id="aiRecFloatContainer" style="position:fixed; top:120px; right:24px; width:350px; z-index:900; display:none;"></div>
 
 <script>
     function toggleServerMenu() { document.getElementById('serverMenu').classList.toggle('show'); }
@@ -631,6 +666,100 @@ const shortsHtml = `
     }
     updateSubBtnUI();
 
+    // 履歴保存 (AIのおすすめ用)
+    let ytHist = JSON.parse(localStorage.getItem('ai_play_history') || '[]');
+    const currentTitle = ${JSON.stringify(videoData.videoTitle || '')};
+    if (currentTitle && !ytHist.includes(currentTitle)) {
+        ytHist.push(currentTitle);
+        if (ytHist.length > 20) ytHist.shift();
+        localStorage.setItem('ai_play_history', JSON.stringify(ytHist));
+    }
+
+    // --- AIおすすめ機能のロジック ---
+    const aiStatus = localStorage.getItem('aiRecState') || 'first';
+
+    function hideAiForever(e) {
+        if(e) e.stopPropagation();
+        localStorage.setItem('aiRecState', 'hidden');
+        document.getElementById('aiRecCard').style.display = 'none';
+        document.getElementById('aiFloatingBtn').style.display = 'none';
+        document.getElementById('aiRecFloatContainer').style.display = 'none';
+    }
+
+    async function loadAiRecommendation(targetContainer, isFloat) {
+        targetContainer.style.display = 'flex';
+        targetContainer.innerHTML = \`
+            <div class="gemini-loader">
+                <div class="gemini-dot"></div><div class="gemini-dot"></div><div class="gemini-dot"></div>
+            </div>
+        \`;
+
+        try {
+            // 登録チャンネルを収集
+            const subs = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('subscribed_')) {
+                    subs.push(key.replace('subscribed_', ''));
+                }
+            }
+
+            const res = await fetch('/api/ai-recommend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ history: ytHist, subscriptions: subs })
+            });
+            const data = await res.json();
+
+            if (data.success && data.video) {
+                const v = data.video;
+                targetContainer.innerHTML = \`
+                    <div class="ai-rec-header">
+                        <div class="ai-rec-title-tag"><i class="fas fa-sparkles"></i> AIはあなたにこの動画をおすすめしました</div>
+                        <i class="fas fa-times ai-rec-close" onclick="hideAiForever(event)"></i>
+                    </div>
+                    <a href="/video/\${v.id}" class="rec-item" style="margin-bottom:0;">
+                        <div class="rec-thumb"><img src="\${v.thumbnail || \`https://i.ytimg.com/vi/\${v.id}/mqdefault.jpg\`}"></div>
+                        <div class="rec-info">
+                            <div class="rec-title">\${v.title}</div>
+                            <div class="rec-meta">\${v.author ? v.author.name : ''}</div>
+                            <div class="rec-meta">AIおすすめ動画</div>
+                        </div>
+                    </a>
+                \`;
+                if(isFloat) {
+                    targetContainer.className = 'ai-rec-card'; // Add styling to float
+                }
+            } else {
+                targetContainer.style.display = 'none';
+            }
+        } catch (err) {
+            console.error("AI fetch failed", err);
+            targetContainer.style.display = 'none';
+        }
+    }
+
+    function triggerFloatingAi() {
+        document.getElementById('aiFloatingBtn').style.display = 'none';
+        const floatContainer = document.getElementById('aiRecFloatContainer');
+        loadAiRecommendation(floatContainer, true);
+    }
+
+    function initAiRecommendation() {
+        if (aiStatus === 'hidden') return;
+
+        if (aiStatus === 'first') {
+            // 初回: サイドバーの一番上に表示
+            const inlineCard = document.getElementById('aiRecCard');
+            loadAiRecommendation(inlineCard, false);
+            localStorage.setItem('aiRecState', 'second_plus');
+        } else if (aiStatus === 'second_plus') {
+            // 2回目以降: 右上にボタンを表示
+            document.getElementById('aiFloatingBtn').style.display = 'flex';
+        }
+    }
+    // ---------------------------------
+
     async function changeServer(serverName, endpointPath, event) {
         document.getElementById('serverMenu').classList.remove('show');
         const options = document.querySelectorAll('.server-option');
@@ -642,21 +771,17 @@ const shortsHtml = `
 
         try {
             let newUrl = '';
-            // --- ロジックの条件分岐 ---
             if (serverName === 'googlevideo') {
                 newUrl = "${videoData.stream_url}" === "youtube-nocookie" ? \`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1\` : "${videoData.stream_url}";
             } else if (serverName === 'Youtube-Pro') {
-                // Youtube-ProはエンドポイントURLをそのまま使用
                 newUrl = endpointPath;
             } else {
-                // それ以外はサーバーから生のURLを取得
                 const res = await fetch(endpointPath);
                 if (!res.ok) throw new Error("サーバーエラー");
                 newUrl = await res.text();
             }
 
             const playerContainer = document.getElementById('playerWrapper');
-            // Kahoot, Scratch, Youtube-Pro, およびnocookieは強制的にiframe
             const forceIframe = ['YoutubeEdu-Kahoot', 'YoutubeEdu-Scratch', 'Youtube-Pro', 'youtube-nocookie'].includes(serverName);
             const isIframe = forceIframe || newUrl.includes('embed');
 
@@ -703,11 +828,11 @@ const shortsHtml = `
             \`).join('');
         }
     }
+    
     window.onload = () => {
         loadRecommendations();
+        initAiRecommendation(); 
 
-        // ページ読み込み時に localStorage の再生方法を即座に適用
-        // (sessionStorage ガードと setTimeout を廃止: 毎回正しいモードで初期化する)
         const savedMode = localStorage.getItem('playbackMode') || 'googlevideo';
         const serverEndpoints = {
             'googlevideo':        '',
@@ -720,7 +845,6 @@ const shortsHtml = `
         const serverName = serverEndpoints.hasOwnProperty(savedMode) ? savedMode : 'googlevideo';
         const endpointPath = serverEndpoints[serverName];
 
-        // 対応する .server-option 要素を探してアクティブにする
         const options = document.querySelectorAll('.server-option');
         let targetOption = options[0];
         options.forEach(opt => {

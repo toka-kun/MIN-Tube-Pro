@@ -30,6 +30,7 @@ const keys = [
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
+app.use(express.json());
 
 let apiListCache = [];
 
@@ -1876,6 +1877,54 @@ app.get('/stream/inv/:videoId', async (req, res) => {
     } catch (error) {
         console.error('Error fetching the URL:', error.message);
         res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post("/api/ai-recommend", async (req, res) => {
+    try {
+        const { history, subscriptions } = req.body;
+        
+        const historyText = history && history.length > 0 ? history.slice(-20).join(", ") : "なし"; 
+        const subsText = subscriptions && subscriptions.length > 0 ? subscriptions.join(", ") : "なし";
+
+        const prompt = `情報を基にこのユーザーにおすすめできる次の動画のタイトルを教えてください。動画のタイトルは必ず「」内に書いてください。その他の説明や前置きは一切不要です。\n\nユーザーの視聴履歴: ${historyText}\n登録チャンネル: ${subsText}`;
+
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer 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`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama3-8b-8192", 
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7
+            })
+        });
+
+        if (!groqResponse.ok) {
+            throw new Error(`Groq API Error: ${groqResponse.status}`);
+        }
+
+        const groqData = await groqResponse.json();
+        const reply = groqData.choices[0].message.content;
+        
+        const match = reply.match(/「(.*?)」/);
+        const searchTitle = match ? match[1] : reply.trim().replace(/^['"]|['"]$/g, '');
+
+        console.log("AI Suggested Title:", searchTitle);
+
+        const results = await yts.GetListByKeyword(searchTitle, false, 1);
+        
+        if (results.items && results.items.length > 0) {
+            return res.json({ success: true, item: results.items[0] });
+        } else {
+            return res.json({ success: false, error: "動画が見つかりませんでした" });
+        }
+
+    } catch (error) {
+        console.error("AI Recommendation Error:", error);
+        res.status(500).json({ success: false, error: "AI処理中にエラーが発生しました" });
     }
 });
 

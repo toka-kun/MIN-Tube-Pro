@@ -278,5 +278,19 @@
   "tags": ["アクション", "サバイバル", "猫"],
   "isNew": true,
   "status": "done"
+},
+  {
+  "key": "backroom",
+  "name": "BackRoom",
+  "emoji": "🟡",
+  "sub": "ホラー · 1人プレイ",
+  "file": "fun/Backroom.html",
+  "desc": "逃げろ",
+  "genre": "horror",
+  "genreLabel": "ホラー",
+  "players": "1人",
+  "tags": ["ホラー", "サバイバル", "backroom"],
+  "isNew": true,
+  "status": "done"
 }
 ]

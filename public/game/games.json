@@ -306,5 +306,19 @@
   "tags": ["ルービック", "1人プレイ", "Rubik's Cube"],
   "isNew": true,
   "status": "done"
+},
+    {
+  "key": "wolf",
+  "name": "人狼",
+  "emoji": "🦴",
+  "sub": "オンライン 心理戦",
+  "file": "fun/wolf.html",
+  "desc": "minの仲間と人狼をプレイしましょう！巧みなプレイで勝利をつかみ取ろう！",
+  "genre": "think",
+  "genreLabel": "online",
+  "players": "4~8人",
+  "tags": ["オンライン", "みんなでプレイ", "人狼"],
+  "isNew": true,
+  "status": "done"
 }
 ]

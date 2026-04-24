@@ -3,6 +3,7 @@ const path = require("path");
 const yts = require("youtube-search-api");
 const fetch = require("node-fetch");
 const cookieParser = require("cookie-parser");
+const https = require("https");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -1877,6 +1878,28 @@ app.get('/stream/inv/:videoId', async (req, res) => {
         console.error('Error fetching the URL:', error.message);
         res.status(500).send('Internal Server Error');
     }
+});
+
+app.get("/img/:videoId", (req, res) => {
+    const { videoId } = req.params;
+
+    const url = `https://i3.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    https.get(url, (ytRes) => {
+        if (ytRes.statusCode !== 200) {
+            res.status(ytRes.statusCode).send("Failed to fetch image");
+            return;
+        }
+
+        res.setHeader("Content-Type", "image/jpeg");
+
+        // サーバー負荷を軽減するためそのままデータを転送してます
+        ytRes.pipe(res);
+
+    }).on("error", (err) => {
+        console.error("Image proxy error:", err);
+        res.status(500).send("Proxy error");
+    });
 });
 
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, "public", "error.html")));

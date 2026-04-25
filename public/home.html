@@ -405,7 +405,7 @@
     }
 
     .meta { display: flex; gap: 12px; align-items: flex-start; }
-    .channel-avatar {
+    .channel-avatar, a.channel-avatar {
       width: 36px; height: 36px; border-radius: 50%;
       background: linear-gradient(135deg, #444 0%, #222 100%);
       flex-shrink: 0;
@@ -885,8 +885,7 @@
 
     <main class="main">
       <div class="chips-bar" id="chipsBar">
-        <button class="chip active" data-q="trending">すべて</button>
-        <button class="chip" data-q="recommended" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>おすすめ</button>
+        <button class="chip active" data-q="recommended">すべて</button>
         <button class="chip" data-q="Music">音楽</button>
         <button class="chip" data-q="実況">実況</button>
         <button class="chip" data-q="ゲーム">ゲーム</button>
@@ -1184,16 +1183,16 @@ if (!currentUrl.includes("projects") && !currentUrl.includes("private") && !curr
           card.innerHTML = `
             <div class="thumb">
               <img src="${thumbUrl}" loading="lazy" alt="${item.title || '動画'}">
-              <div class="duration-badge">4:32</div>
+              ${item.lengthText ? `<div class="duration-badge">${item.lengthText}</div>` : ''}
             </div>
             <div class="meta">
-              <div class="channel-avatar" data-initial="${initial}">
+              <a href="/channel/${encodeURIComponent(channel)}" class="channel-avatar" data-initial="${initial}" onclick="event.stopPropagation()" style="text-decoration:none;">
                 <span class="avatar-initial">${initial}</span>
                 ${avatarUrl ? `<img src="${avatarUrl}" alt="${channel}" onload="this.classList.add('loaded')" onerror="this.remove()">` : ''}
-              </div>
+              </a>
               <div class="details">
                 <h3>${item.title || ''}</h3>
-                <div class="channel-name">${channel}</div>
+                <a href="/channel/${encodeURIComponent(channel)}" class="channel-name" onclick="event.stopPropagation()" style="text-decoration:none;color:var(--text-muted);">${channel}</a>
                 <div class="video-stats">${viewText}${viewText && published ? ' • ' : ''}${published}</div>
                 <button class="card-sub-btn${isSub ? ' subscribed' : ''}" data-channel="${channel.replace(/"/g,'&quot;')}" onclick="toggleCardSub(event, this)">${isSub ? '登録済み' : 'チャンネル登録'}</button>
               </div>
@@ -1606,16 +1605,16 @@ if (!currentUrl.includes("projects") && !currentUrl.includes("private") && !curr
           card.innerHTML = `
             <div class="thumb">
               <img src="${thumbUrl}" loading="lazy" alt="${item.title || '動画'}">
-              <div class="duration-badge">4:32</div>
+              ${item.lengthText ? `<div class="duration-badge">${item.lengthText}</div>` : ''}
             </div>
             <div class="meta">
-              <div class="channel-avatar" data-initial="${initial}">
+              <a href="/channel/${encodeURIComponent(channel)}" class="channel-avatar" data-initial="${initial}" onclick="event.stopPropagation()" style="text-decoration:none;">
                 <span class="avatar-initial">${initial}</span>
                 ${avatarUrl ? `<img src="${avatarUrl}" alt="${channel}" onload="this.classList.add('loaded')" onerror="this.remove()">` : ''}
-              </div>
+              </a>
               <div class="details">
                 <h3>${item.title || ''}</h3>
-                <div class="channel-name">${channel}</div>
+                <a href="/channel/${encodeURIComponent(channel)}" class="channel-name" onclick="event.stopPropagation()" style="text-decoration:none;color:var(--text-muted);">${channel}</a>
                 <div class="video-stats">${viewText}${viewText && published ? ' • ' : ''}${published}</div>
                 <button class="card-sub-btn${isSub ? ' subscribed' : ''}" data-channel="${channel.replace(/"/g,'&quot;')}" onclick="toggleCardSub(event, this)">${isSub ? '登録済み' : 'チャンネル登録'}</button>
               </div>
@@ -1643,7 +1642,7 @@ if (!currentUrl.includes("projects") && !currentUrl.includes("private") && !curr
     }
 
     // パーソナライズモードかどうか
-    let isPersonalized = false;
+    let isPersonalized = true;
 
     window.onload = () => {
       const params = new URLSearchParams(window.location.search);
@@ -1654,20 +1653,8 @@ if (!currentUrl.includes("projects") && !currentUrl.includes("private") && !curr
         isPersonalized = false;
         loadContent(q, 0);
       } else {
-        // 登録チャンネルか履歴があればパーソナライズフィード
-        const hasSubs = getSubscribedChannels().length > 0;
-        const hasHistory = libGet(LIB_HISTORY).length > 0;
-        if (hasSubs || hasHistory) {
-          isPersonalized = true;
-          // 「おすすめ」チップをアクティブにする
-          document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-          const recChip = document.querySelector('.chip[data-q="recommended"]');
-          if (recChip) recChip.classList.add('active');
-          loadPersonalizedFeed(0);
-        } else {
-          isPersonalized = false;
-          loadContent('trending', 0);
-        }
+        isPersonalized = true;
+        loadPersonalizedFeed(0);
       }
     };
 

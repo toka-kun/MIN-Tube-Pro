@@ -1971,6 +1971,12 @@ app.get("/img/:videoId", (req, res) => {
     });
 });
 
+app.get("/abyss.png", (req, res) => {
+  const filePath = path.join(__dirname, "img", "abyss.png");
+  res.sendFile(filePath);
+});
+
+
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, "public", "error.html")));
 app.use((err, req, res, next) => {
   res.status(500).sendFile(path.join(__dirname, "public", "error.html"));

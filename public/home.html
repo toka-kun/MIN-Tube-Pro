@@ -657,6 +657,53 @@
     .sidebar.expanded .lib-badge { display: inline-block; }
     .lib-badge { display: none; }
 
+.chips-bar {
+  display: flex;
+  align-items: center; 
+}
+
+.chips-extra-content {
+  margin-left: auto; 
+  padding-left: 16px;
+  flex-shrink: 0; 
+}
+
+.extra-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  background: var(--chip-bg);
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: background 0.1s;
+  height: 40px; 
+}
+
+.extra-link:hover {
+  background: var(--border);
+}
+
+.extra-img {
+  width: auto;
+  height: 32px; 
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.extra-text {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .extra-text {
+    display: none; 
+  }
+}
+
     /* ===== MOBILE BOTTOM NAV ===== */
     .mobile-bottom-nav {
       display: none;
@@ -878,6 +925,12 @@
         <button class="chip" data-q="ゲーム">ゲーム</button>
         <button class="chip" data-q="エンタメ">エンタメ</button>
         <button class="chip" data-q="最新テクノロジー">テック</button>
+        <div class="chips-extra-content">
+  <a href="/abyss" class="extra-link">
+    <img src="/abyss.png" alt="proxy" class="extra-img">
+    <span class="extra-text">プロキシを利用する</span>
+  </a>
+</div>
       </div>
 
       <div class="content-area">
